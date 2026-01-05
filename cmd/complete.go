@@ -25,6 +25,20 @@ var completeCmd = &cobra.Command{
 		stageID := args[0]
 		var outputFiles []string
 
+		// Load config and protocol once
+		cfg, err := loadConfig()
+		if err != nil {
+			return err
+		}
+		proto, err := loadProtocol(cfg.Protocol)
+		if err != nil {
+			return err
+		}
+		stage, ok := proto.StageByID(stageID)
+		if !ok {
+			return fmt.Errorf("unknown stage: %s", stageID)
+		}
+
 		if len(args) > 1 {
 			outputFiles = args[1:]
 		} else {
@@ -35,20 +49,6 @@ var completeCmd = &cobra.Command{
 			}
 			if len(discovered) == 0 {
 				return fmt.Errorf("no changed files detected (untracked or modified)")
-			}
-
-			// Load stage early to filter discovered files
-			cfg, err := loadConfig()
-			if err != nil {
-				return err
-			}
-			proto, err := loadProtocol(cfg.Protocol)
-			if err != nil {
-				return err
-			}
-			stage, ok := proto.StageByID(stageID)
-			if !ok {
-				return fmt.Errorf("unknown stage: %s", stageID)
 			}
 
 			// Filter discovered files against stage outputs
@@ -74,20 +74,6 @@ var completeCmd = &cobra.Command{
 			fmt.Fprintf(cmd.OutOrStdout(), "Auto-detected %d changed files matching stage outputs: %v\n", len(outputFiles), outputFiles)
 		}
 		promptFile, _ := cmd.Flags().GetString("prompt-file")
-
-		// Config already loaded above if auto-discovery ran, but we need it if manual args passed
-		cfg, err := loadConfig()
-		if err != nil {
-			return err
-		}
-		proto, err := loadProtocol(cfg.Protocol)
-		if err != nil {
-			return err
-		}
-		stage, ok := proto.StageByID(stageID)
-		if !ok {
-			return fmt.Errorf("unknown stage: %s", stageID)
-		}
 
 		s, err := loadState()
 		if err != nil {

@@ -482,6 +482,12 @@ func formatPrompt(format string, stageID string, prompt string) (string, error) 
 		}
 		return string(data) + "\n", nil
 	}
+	if format == "yaml" {
+		// Simple YAML output without external dependencies
+		escapedPrompt := strings.ReplaceAll(prompt, "\\", "\\\\")
+		escapedPrompt = strings.ReplaceAll(escapedPrompt, "\"", "\\\"")
+		return fmt.Sprintf("stage: %s\nprompt: |\n  %s\n", stageID, strings.ReplaceAll(escapedPrompt, "\n", "\n  ")), nil
+	}
 	if format == "shell" {
 		// Escape single quotes for shell safety
 		escapedStageID := strings.ReplaceAll(stageID, "'", "'\"'\"'")

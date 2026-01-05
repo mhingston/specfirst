@@ -31,6 +31,8 @@ SpecFirst is designed as a **discipline amplifier**, not a process enforcer. It 
 
 The principles below are not incidental — they are design constraints that guide every feature.
 
+> **Litmus Test**: If a proposed feature could change project outcomes without a human making an explicit decision, it does not belong in SpecFirst.
+
 ---
 
 ### 1. No Execution
@@ -58,6 +60,8 @@ SpecFirst describes work; it does not plan it.
 SpecFirst records facts (e.g. “this stage was marked complete by a human”), but it does not implement a state machine that automatically advances a workflow.
 
 There is no implicit progression, no automatic transitions, and no hidden lifecycle logic. SpecFirst is a record-keeper, not a workflow engine.
+
+> State in SpecFirst represents recorded human attestations, not automated workflow progression.
 
 ---
 
@@ -96,6 +100,15 @@ Everything SpecFirst produces is text.
 SpecFirst never acts on that text.
 
 This makes it composable with any editor, any AI tool, and any delivery process — and keeps humans firmly in control.
+
+## Non-Goals
+
+SpecFirst will never:
+
+- Execute prompts or call LLM APIs
+- Decide task order or auto-advance workflows
+- Score correctness or claim completeness
+- Make decisions without explicit human attestation
 
 ## Documentation
 
@@ -264,6 +277,19 @@ specfirst --interactive --out interactive.prompt.txt
 - `specfirst archive <version>` manages workspace archives.
 - `specfirst protocol list|show|create` manages protocol definitions.
 - `specfirst approve <stage-id> --role <role>` records approvals.
+
+### Cognitive Scaffold Commands
+
+These commands generate **prompts only** — no state, no enforcement, no AI calls. They shape thinking, not execution.
+
+- `specfirst diff <old-spec> <new-spec>` generates a change-analysis prompt comparing two specification files.
+- `specfirst assumptions <spec-file>` generates a prompt to surface hidden assumptions.
+- `specfirst review <spec-file> --persona <p>` generates a role-based review prompt. Personas: `security`, `performance`, `maintainer`, `accessibility`, `user`.
+- `specfirst failure-modes <spec-file>` generates a failure-first interrogation prompt.
+- `specfirst test-intent <spec-file>` generates a test **intent** prompt (not test code).
+- `specfirst trace <spec-file>` generates a spec-to-code mapping prompt.
+- `specfirst distill <spec-file> --audience <a>` generates an audience-specific summary prompt. Audiences: `exec`, `implementer`, `ai`, `qa`.
+- `specfirst calibrate <artifact> [--mode <m>]` generates an epistemic annotation prompt for judgment calibration. Modes: `default`, `confidence`, `uncertainty`, `unknowns`.
 
 ## Completion Options
 

@@ -69,4 +69,14 @@ func init() {
 	rootCmd.AddCommand(archiveCmd)
 	rootCmd.AddCommand(approveCmd)
 	rootCmd.AddCommand(checkCmd)
+
+	// Cognitive scaffold commands
+	rootCmd.AddCommand(diffCmd)
+	rootCmd.AddCommand(assumptionsCmd)
+	rootCmd.AddCommand(reviewCmd)
+	rootCmd.AddCommand(failureCmd)
+	rootCmd.AddCommand(testIntentCmd)
+	rootCmd.AddCommand(traceCmd)
+	rootCmd.AddCommand(distillCmd)
+	rootCmd.AddCommand(calibrateCmd)
 }
