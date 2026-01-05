@@ -2,7 +2,7 @@ package main
 
 import "specfirst/cmd"
 
-var version = "dev"
+var version = "0.3.0"
 
 func main() {
 	cmd.SetVersion(version)
