@@ -119,7 +119,12 @@ SpecFirst will never:
 
 ## Canonical Examples
 
-- [Todo CLI](examples/todo-cli/README.md): A full walkthrough of a simple CLI application.
+Complete, runnable examples with protocols and templates:
+
+- [Todo CLI](examples/todo-cli/README.md): Full workflow walkthrough for a simple CLI application
+- [Bug Fix](examples/bug-fix/README.md): Minimal 2-stage workflow for systematic bug fixes
+- [API Feature](examples/api-feature/README.md): Complete feature development with approvals and task decomposition
+- [Spec Review](examples/spec-review/README.md): Using cognitive scaffold commands to improve specification quality
 
 ## Install
 

@@ -1,0 +1,47 @@
+name: "api-feature"
+version: "1.0"
+
+stages:
+  - id: requirements
+    name: Requirements Gathering
+    type: spec
+    intent: exploration
+    template: requirements.md
+    outputs: [requirements.md]
+    
+  - id: design
+    name: API Design
+    type: spec
+    intent: decision
+    template: design.md
+    depends_on: [requirements]
+    inputs: [requirements.md]
+    outputs: [design.md]
+    
+  - id: decompose
+    name: Task Breakdown
+    type: decompose
+    intent: planning
+    template: decompose.md
+    depends_on: [design]
+    inputs: [design.md]
+    outputs: [tasks.yaml]
+    prompt:
+      granularity: ticket
+      max_tasks: 10
+      
+  - id: implementation
+    name: Implementation
+    type: task_prompt
+    intent: execution
+    template: implementation.md
+    depends_on: [requirements, design, decompose]
+    inputs: [requirements.md, design.md, tasks.yaml]
+    source: decompose
+    outputs: []
+
+approvals:
+  - stage: design
+    role: architect
+  - stage: design
+    role: product

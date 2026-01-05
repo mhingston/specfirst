@@ -1,0 +1,19 @@
+name: "spec-review"
+version: "1.0"
+
+stages:
+  - id: draft
+    name: Draft Specification
+    type: spec
+    intent: exploration
+    template: draft.md
+    outputs: [spec-draft.md]
+    
+  - id: finalize
+    name: Final Specification
+    type: spec
+    intent: decision
+    template: final.md
+    depends_on: [draft]
+    inputs: [spec-draft.md]
+    outputs: [spec-final.md]
