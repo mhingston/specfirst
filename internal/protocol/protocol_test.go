@@ -217,3 +217,34 @@ stages: [{id: s2, template: t.md}]
 		t.Fatalf("expected circular import error, got %v", err)
 	}
 }
+
+func TestLoadWithChainDependencies(t *testing.T) {
+	tmpDir := t.TempDir()
+	yaml := `name: test
+version: 1.0
+stages:
+  - id: plan
+    name: Plan
+    template: plan.md
+    outputs: [plan.md]
+  - id: execute
+    name: Execute
+    template: execute.md
+    depends_on: [plan]
+    inputs: [plan.md]
+    outputs: []
+  - id: verify
+    name: Verify
+    template: verify.md
+    depends_on: [execute, plan]
+    inputs: [plan.md]
+    outputs: [report.md]
+`
+	path := filepath.Join(tmpDir, "protocol.yaml")
+	os.WriteFile(path, []byte(yaml), 0644)
+
+	_, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+}

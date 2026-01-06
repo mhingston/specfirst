@@ -21,7 +21,7 @@ const (
 )
 
 func SpecPath(elem ...string) string {
-	parts := append([]string{baseDir(), SpecDir}, elem...)
+	parts := append([]string{BaseDir(), SpecDir}, elem...)
 	return filepath.Join(parts...)
 }
 
@@ -63,7 +63,7 @@ func ConfigPath() string {
 	return SpecPath(ConfigFile)
 }
 
-func baseDir() string {
+func BaseDir() string {
 	if root, err := gitRoot(); err == nil && root != "" {
 		return root
 	}

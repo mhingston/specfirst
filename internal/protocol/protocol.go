@@ -279,7 +279,12 @@ func loadWithDepth(path string, resolver func(name string) (Protocol, error), vi
 			}
 
 			if !found {
-				return Protocol{}, fmt.Errorf("stage %q: input %q not found in outputs of any dependency", stage.ID, input)
+				var depInfo []string
+				for _, depID := range stage.DependsOn {
+					depStage := stageMap[depID]
+					depInfo = append(depInfo, fmt.Sprintf("%s outputs: %v", depID, depStage.Outputs))
+				}
+				return Protocol{}, fmt.Errorf("stage %q: input %q not found in outputs of any dependency. Dependencies: %v", stage.ID, input, depInfo)
 			}
 		}
 	}

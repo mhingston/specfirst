@@ -56,7 +56,19 @@ func loadProtocol(name string) (protocol.Protocol, error) {
 	}
 	// Otherwise treat as a protocol name in the protocols directory
 	path := store.ProtocolsPath(name + ".yaml")
-	return protocol.Load(path)
+	proto, err := protocol.Load(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Check if .specfirst directory exists at all
+			specDir := store.SpecPath()
+			if _, statErr := os.Stat(specDir); os.IsNotExist(statErr) {
+				return protocol.Protocol{}, fmt.Errorf("project not initialized. Run 'specfirst init' in %s", store.BaseDir())
+			}
+			return protocol.Protocol{}, fmt.Errorf("protocol %q not found in %s", name, specDir)
+		}
+		return protocol.Protocol{}, err
+	}
+	return proto, nil
 }
 
 func loadState() (state.State, error) {
