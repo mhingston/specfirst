@@ -1,0 +1,147 @@
+name: "product-design"
+version: "1.0"
+
+stages:
+  - id: product-vision
+    name: Product Vision
+    type: spec
+    intent: exploration
+    template: product-vision.md
+    outputs:
+      - product/product-overview.md
+
+  - id: product-roadmap
+    name: Product Roadmap
+    type: spec
+    intent: decision
+    template: product-roadmap.md
+    depends_on: [product-vision]
+    inputs:
+      - product/product-overview.md
+    outputs:
+      - product/product-roadmap.md
+
+  - id: data-model
+    name: Data Model
+    type: spec
+    intent: decision
+    template: data-model.md
+    depends_on: [product-vision, product-roadmap]
+    inputs:
+      - product/product-overview.md
+      - product/product-roadmap.md
+    outputs:
+      - product/data-model/data-model.md
+
+  - id: design-tokens
+    name: Design Tokens
+    type: spec
+    intent: decision
+    template: design-tokens.md
+    depends_on: [product-vision, product-roadmap, data-model]
+    inputs:
+      - product/product-overview.md
+      - product/product-roadmap.md
+    outputs:
+      - product/design-system/colors.json
+      - product/design-system/typography.json
+
+  - id: design-shell
+    name: Application Shell
+    type: spec
+    intent: execution
+    template: design-shell.md
+    depends_on: [product-vision, product-roadmap, design-tokens]
+    inputs:
+      - product/product-overview.md
+      - product/product-roadmap.md
+      - product/design-system/colors.json
+      - product/design-system/typography.json
+    outputs:
+      - product/shell/spec.md
+      - src/shell/components/*.tsx
+      - src/shell/ShellPreview.tsx
+
+  # Section loop: repeat these 4 stages per section.
+  - id: shape-section
+    name: Shape Section
+    type: spec
+    intent: exploration
+    repeatable: true
+    template: shape-section.md
+    depends_on: [product-vision, product-roadmap, design-shell]
+    inputs:
+      - product/product-overview.md
+      - product/product-roadmap.md
+      - product/shell/spec.md
+    outputs:
+      - product/sections/*/spec.md
+
+  - id: sample-data
+    name: Sample Data
+    type: spec
+    intent: execution
+    repeatable: true
+    template: sample-data.md
+    depends_on: [data-model, shape-section]
+    inputs:
+      - product/data-model/data-model.md
+      - product/sections/*/spec.md
+    outputs:
+      - product/sections/*/data.json
+      - product/sections/*/types.ts
+
+  - id: design-screen
+    name: Design Screen
+    type: spec
+    intent: execution
+    repeatable: true
+    template: design-screen.md
+    depends_on: [design-tokens, design-shell, sample-data, shape-section]
+    inputs:
+      - product/design-system/colors.json
+      - product/design-system/typography.json
+      - product/shell/spec.md
+      - product/sections/*/spec.md
+      - product/sections/*/data.json
+      - product/sections/*/types.ts
+      - src/shell/components/*.tsx
+    outputs:
+      - src/sections/*/*.tsx
+      - src/sections/*/components/*.tsx
+
+  - id: screenshot-design
+    name: Screenshot Design
+    type: spec
+    intent: execution
+    repeatable: true
+    template: screenshot-design.md
+    depends_on: [shape-section, design-screen]
+    inputs:
+      - product/sections/*/spec.md
+    outputs:
+      - product/sections/*/*.png
+
+  - id: export-product
+    name: Export Product
+    type: spec
+    intent: execution
+    template: export-product.md
+    depends_on: [product-vision, product-roadmap, data-model, design-tokens, design-shell, shape-section, sample-data, design-screen, screenshot-design]
+    inputs:
+      - product/product-overview.md
+      - product/product-roadmap.md
+      - product/data-model/data-model.md
+      - product/design-system/colors.json
+      - product/design-system/typography.json
+      - product/shell/spec.md
+      - src/shell/components/*.tsx
+      - src/shell/ShellPreview.tsx
+      - product/sections/*/spec.md
+      - product/sections/*/data.json
+      - product/sections/*/types.ts
+      - product/sections/*/*.png
+      - src/sections/*/*.tsx
+      - src/sections/*/components/*.tsx
+    outputs:
+      - product-plan/*

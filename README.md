@@ -128,6 +128,7 @@ Complete, runnable examples with protocols and templates:
 - [Spec Review](examples/spec-review/README.md): Using cognitive scaffold commands to improve specification quality
 - [Refactoring](examples/refactoring/README.md): Structured code improvement with risk mitigation and verification
 - [Database Migration](examples/database-migration/README.md): Safe schema changes with approval gates and rollback planning
+- [Product Design](examples/product-design/README.md): Design flow from product vision to implementation handoff
 
 ## Install
 
@@ -366,6 +367,7 @@ These commands generate **prompts only** — no state, no enforcement, no AI cal
   generated/     # Generated files (e.g., compiled prompts)
   protocols/     # Protocol YAML definitions
   templates/     # Prompt templates
+  skills/        # Reusable prompt chunks (for readFile helper)
   archives/      # Archived spec versions
   state.json     # Workflow state
   config.yaml    # Project configuration
@@ -491,6 +493,26 @@ Example template:
 - {{ . }}
 {{- end }}
 ```
+
+### Template Functions
+
+Templates have access to these helper functions:
+
+| Function | Usage | Description |
+| --- | --- | --- |
+| `join` | `{{ join .Outputs ", " }}` | Joins a slice with a delimiter |
+| `readFile` | `{{ readFile "skill-name.md" }}` | Includes a skill file from `.specfirst/skills/` |
+
+### Skills (Reusable Prompt Chunks)
+
+Skills are reusable markdown files stored in `.specfirst/skills/`. Use them to share common guidance across templates:
+
+```markdown
+# In your template:
+{{ readFile "spec-writing.md" }}
+```
+
+This includes the content of `.specfirst/skills/spec-writing.md` directly in the rendered prompt. Skills help maintain consistency across protocols without copy-pasting.
 
 ## Config and State
 

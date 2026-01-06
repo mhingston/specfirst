@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"text/template"
@@ -89,8 +90,24 @@ func Render(path string, data Data) (string, error) {
 		return "", fmt.Errorf("reading template %s: %w", path, err)
 	}
 
+	// readFile helper: allows templates to include skill files from .specfirst/skills/
+	readFile := func(rel string) (string, error) {
+		cleaned := filepath.Clean(rel)
+		if filepath.IsAbs(cleaned) || strings.HasPrefix(cleaned, "..") ||
+			strings.Contains(cleaned, ".."+string(filepath.Separator)) {
+			return "", fmt.Errorf("readFile: invalid path %q", rel)
+		}
+		p := filepath.Join(".specfirst", "skills", cleaned)
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return "", err
+		}
+		return string(b), nil
+	}
+
 	tmpl, err := template.New("stage").Funcs(template.FuncMap{
-		"join": strings.Join,
+		"join":     strings.Join,
+		"readFile": readFile,
 	}).Parse(string(content))
 	if err != nil {
 		return "", fmt.Errorf("parsing template %s: %w", path, err)

@@ -51,6 +51,41 @@ Only show a section if constraints are defined:
 ### Whitespace Control
 Use `{{-` and `-}}` to remove leading/trailing whitespace and prevent extra blank lines in your rendered prompts.
 
+## Template Functions
+
+Templates have access to these helper functions:
+
+| Function | Usage | Description |
+| --- | --- | --- |
+| `join` | `{{ join .Outputs ", " }}` | Joins a slice of strings with a delimiter |
+| `readFile` | `{{ readFile "skill.md" }}` | Includes a file from `.specfirst/skills/` |
+
+## Skills (Reusable Prompt Chunks)
+
+Skills are reusable markdown files stored in `.specfirst/skills/`. They help share common guidance across templates without copy-pasting.
+
+### Example: Including a Skill
+
+```markdown
+# {{ .StageName }}
+
+## Design Guidelines
+{{ readFile "design-principles.md" }}
+
+## Task
+Design the user interface...
+```
+
+This includes the content of `.specfirst/skills/design-principles.md` directly in the rendered prompt.
+
+### Creating Skills
+
+Create any `.md` file in `.specfirst/skills/` and reference it via `{{ readFile "your-skill.md" }}`.
+
+See the [product-design example](../examples/product-design/) for a working demonstration of skills.
+
+**Security Note**: The `readFile` function only reads from `.specfirst/skills/` and rejects paths containing `..` or absolute paths.
+
 ## Example Template
 
 ```markdown

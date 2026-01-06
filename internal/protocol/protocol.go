@@ -245,42 +245,41 @@ func loadWithDepth(path string, resolver func(name string) (Protocol, error), vi
 			}
 			found := false
 
-			// Check if stage-qualified (e.g., "requirements/readme.md")
-			if strings.Contains(input, "/") || strings.Contains(input, string(os.PathSeparator)) {
-				parts := strings.SplitN(filepath.ToSlash(input), "/", 2)
-				stageID := parts[0]
-				filename := parts[1]
-
-				targetStage, ok := stageMap[stageID]
-				if !ok {
-					return Protocol{}, fmt.Errorf("stage %q: input %q references unknown stage %q", stage.ID, input, stageID)
-				}
-				for _, out := range targetStage.Outputs {
-					if matchPattern(out, filename) {
+			// First, try to match input against outputs of DependsOn stages
+			// This works for both simple filenames and multi-level paths
+			for _, depID := range stage.DependsOn {
+				depStage := stageMap[depID]
+				for _, out := range depStage.Outputs {
+					if matchPattern(out, input) {
 						found = true
 						break
 					}
 				}
-				if !found {
-					return Protocol{}, fmt.Errorf("stage %q: input %q not found in outputs of stage %q", stage.ID, input, stageID)
+				if found {
+					break
 				}
-			} else {
-				// Search in DependsOn stages
-				for _, depID := range stage.DependsOn {
-					depStage := stageMap[depID]
-					for _, out := range depStage.Outputs {
-						if matchPattern(out, input) {
+			}
+
+			// If not found and input has a path separator, try stage-qualified format
+			// Format: <stage-id>/<output-path> (e.g., "requirements/readme.md")
+			if !found && (strings.Contains(input, "/") || strings.Contains(input, string(os.PathSeparator))) {
+				parts := strings.SplitN(filepath.ToSlash(input), "/", 2)
+				stageID := parts[0]
+				filename := parts[1]
+
+				// Only try stage-qualified if the first component looks like a stage ID
+				if targetStage, ok := stageMap[stageID]; ok {
+					for _, out := range targetStage.Outputs {
+						if matchPattern(out, filename) {
 							found = true
 							break
 						}
 					}
-					if found {
-						break
-					}
 				}
-				if !found {
-					return Protocol{}, fmt.Errorf("stage %q: input %q not found in outputs of any dependency", stage.ID, input)
-				}
+			}
+
+			if !found {
+				return Protocol{}, fmt.Errorf("stage %q: input %q not found in outputs of any dependency", stage.ID, input)
 			}
 		}
 	}
