@@ -172,30 +172,45 @@ specfirst requirements
 
 ## AI CLI Integration
 
-SpecFirst outputs prompts to stdout, making it composable with AI CLIs in the Unix tradition.
+SpecFirst outputs prompts to stdout, making it composable with AI CLIs. 
 
-**Tools that support direct piping:**
+### Interactive vs. Non-Interactive Modes
+
+Most AI CLIs support a **one-shot (non-interactive)** mode for automation and an **interactive** mode for refinement.
+
+#### 1. Interactive Refinement (Recommended)
+To maintain an interactive session where you can refine the output, use your system clipboard or tools that support stdin-to-interactive:
 
 ```bash
-# Pipe to Claude Code (requires -p flag for headless mode)
+# Copy prompt to clipboard and paste into your AI tool
+specfirst requirements | pbcopy # macOS
+specfirst requirements | xclip -sel clip # Linux
+
+# Or use command substitution in the tool's interactive prompt
+# (Works if the tool allows starting a session with an initial prompt)
+copilot -p "$(specfirst requirements)" --allow-all-tools
+```
+
+#### 2. One-Shot / Piped (Non-Interactive)
+Use these for quick generations or scripting. Note that flags like `-p` or `--print` usually exit after one response.
+
+```bash
+# Claude Code (headless mode)
 specfirst requirements | claude -p
 
-# Pipe to Codex (use - to read from stdin)
-specfirst design | codex -
+# GitHub Copilot (non-interactive)
+copilot -p "$(specfirst requirements)" --allow-all-tools
 
-# Pipe to Gemini CLI
+# Gemini CLI
 specfirst implementation | gemini
 ```
 
-**Tools that require the prompt as an argument** (use command substitution or `--out`):
+#### 3. Pipelining Back to SpecFirst
+You can pipe AI output directly into `specfirst complete` using `-` to read from stdin:
 
 ```bash
-# GitHub Copilot requires the prompt as a string argument
-copilot -p "$(specfirst requirements)" --allow-all-tools
-
-# Or write to a file first
-specfirst requirements --out prompt.txt
-copilot -p "$(cat prompt.txt)" --allow-all-tools
+# Example: Generate requirements with Claude and complete the stage in one go
+specfirst requirements | claude -p | specfirst complete requirements -
 ```
 
 **For any tool that reads from files**, use `--out`:

@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"io"
 	"specfirst/internal/protocol"
 	"specfirst/internal/state"
 	"specfirst/internal/store"
@@ -39,8 +40,32 @@ var completeCmd = &cobra.Command{
 			return fmt.Errorf("unknown stage: %s", stageID)
 		}
 
+		var stdinContent []byte
 		if len(args) > 1 {
-			outputFiles = args[1:]
+			outputFiles = make([]string, len(args[1:]))
+			copy(outputFiles, args[1:])
+			// First pass: identify stdin and map to target filenames
+			for i, arg := range outputFiles {
+				if arg == "-" || strings.HasSuffix(arg, "=-") {
+					if stdinContent == nil {
+						var err error
+						stdinContent, err = io.ReadAll(cmd.InOrStdin())
+						if err != nil {
+							return fmt.Errorf("failed to read from stdin: %w", err)
+						}
+					}
+
+					if arg == "-" {
+						if len(stage.Outputs) == 1 && !strings.Contains(stage.Outputs[0], "*") {
+							outputFiles[i] = stage.Outputs[0]
+						} else {
+							return fmt.Errorf("ambiguous stdin mapping: stage has multiple or wildcard outputs %v. Use filename=- syntax.", stage.Outputs)
+						}
+					} else {
+						outputFiles[i] = strings.TrimSuffix(arg, "=-")
+					}
+				}
+			}
 		} else {
 			// Auto-discover changed files
 			discovered, err := discoverChangedFiles()
@@ -92,6 +117,24 @@ var completeCmd = &cobra.Command{
 		_, hasOutput := s.StageOutputs[stageID]
 		if (s.IsStageCompleted(stageID) || hasOutput) && !completeForce {
 			return fmt.Errorf("stage %s already completed; use --force to overwrite", stageID)
+		}
+
+		// Write stdin content to workspace before validation
+		if stdinContent != nil {
+			// We only want to write to files that were originally mapped to stdin.
+			// Since outputFiles was modified in the first pass, we check the original args.
+			for i, arg := range args[1:] {
+				if arg == "-" || strings.HasSuffix(arg, "=-") {
+					target := outputFiles[i]
+					resolved, err := resolveOutputPath(target)
+					if err != nil {
+						return err
+					}
+					if err := os.WriteFile(resolved, stdinContent, 0644); err != nil {
+						return fmt.Errorf("failed to write stdin to %s: %w", target, err)
+					}
+				}
+			}
 		}
 
 		if err := validateOutputs(stage, outputFiles); err != nil {
