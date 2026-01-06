@@ -1,6 +1,6 @@
 package cmd
 
-var version = "dev"
+var version = "v0.4.0"
 
 func SetVersion(v string) {
 	if v != "" {
