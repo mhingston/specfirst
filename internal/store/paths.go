@@ -15,6 +15,7 @@ const (
 	ProtocolsDir = "protocols"
 	TemplatesDir = "templates"
 	ArchivesDir  = "archives"
+	SkillsDir    = "skills"
 	StateFile    = "state.json"
 	ConfigFile   = "config.yaml"
 )
@@ -46,6 +47,11 @@ func TemplatesPath(elem ...string) string {
 
 func ArchivesPath(elem ...string) string {
 	parts := append([]string{ArchivesDir}, elem...)
+	return SpecPath(parts...)
+}
+
+func SkillsPath(elem ...string) string {
+	parts := append([]string{SkillsDir}, elem...)
 	return SpecPath(parts...)
 }
 

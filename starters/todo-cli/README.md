@@ -11,8 +11,8 @@ This example demonstrates a full SpecFirst workflow, including requirements, des
 
 2. Copy the example files:
    ```bash
-   cp -r /path/to/specfirst/examples/todo-cli/templates .specfirst/
-   cp /path/to/specfirst/examples/todo-cli/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/todo-cli/templates .specfirst/
+   cp /path/to/specfirst/starters/todo-cli/protocol.yaml .specfirst/protocols/
    ```
 
 3. Initialize SpecFirst with this protocol:
@@ -26,12 +26,12 @@ You can run this example immediately using the `--protocol` override:
 
 1. **Requirements**:
    ```bash
-   specfirst --protocol examples/todo-cli/protocol.yaml reqs
+   specfirst --protocol starters/todo-cli/protocol.yaml reqs
    ```
    
 2. **Design**:
    ```bash
-   specfirst --protocol examples/todo-cli/protocol.yaml design
+   specfirst --protocol starters/todo-cli/protocol.yaml design
    ```
 
 ## Setup (For a new project)
@@ -46,8 +46,8 @@ To use this protocol in your own project:
 
 2. Copy the protocol and templates:
    ```bash
-   cp /path/to/specfirst/examples/todo-cli/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/todo-cli/templates/* .specfirst/templates/
+   cp /path/to/specfirst/starters/todo-cli/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/todo-cli/templates/* .specfirst/templates/
    ```
 
 3. Update config (optional) or use the flag:

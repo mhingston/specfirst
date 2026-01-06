@@ -64,6 +64,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&stageRiskBias, "risk-bias", "balanced", "risk bias: conservative, balanced, fast")
 
 	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(starterCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(completeCmd)
 	rootCmd.AddCommand(completeSpecCmd)

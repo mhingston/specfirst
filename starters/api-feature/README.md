@@ -15,12 +15,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Requirements**:
    ```bash
-   specfirst --protocol examples/api-feature/protocol.yaml requirements
+   specfirst --protocol starters/api-feature/protocol.yaml requirements
    ```
  
 2. **Design**:
    ```bash
-   specfirst --protocol examples/api-feature/protocol.yaml design
+   specfirst --protocol starters/api-feature/protocol.yaml design
    ```
  
 ## Setup (For a new project)
@@ -35,8 +35,8 @@ To use this protocol in your own project:
  
 2. Copy the protocol and templates:
    ```bash
-   cp /path/to/specfirst/examples/api-feature/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/api-feature/templates/* .specfirst/templates/
+   cp /path/to/specfirst/starters/api-feature/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/api-feature/templates/* .specfirst/templates/
    ```
  
 3. Update config (optional) or use the flag:

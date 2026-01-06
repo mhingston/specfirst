@@ -1,4 +1,5 @@
-name: "product-design"
+name: product-design
+description: Complete product design lifecycle from intent definition to refined implementation.
 version: "1.0"
 
 stages:

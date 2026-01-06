@@ -1,4 +1,5 @@
 name: "api-feature"
+description: Accelerates API development with specification-driven design, implementation, and verification.
 version: "1.0"
 
 stages:

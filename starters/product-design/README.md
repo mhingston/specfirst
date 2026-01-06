@@ -29,9 +29,9 @@ To use this protocol in a new project:
 
 2. Copy the protocol, templates, and skills:
    ```bash
-   cp /path/to/specfirst/examples/product-design/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/product-design/templates/* .specfirst/templates/
-   cp -r /path/to/specfirst/examples/product-design/skills/* .specfirst/skills/
+   cp /path/to/specfirst/starters/product-design/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/product-design/templates/* .specfirst/templates/
+   cp -r /path/to/specfirst/starters/product-design/skills/* .specfirst/skills/
    ```
 
 3. Set the protocol in your config or use the flag:

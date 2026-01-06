@@ -15,12 +15,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Analysis**:
    ```bash
-   specfirst --protocol examples/bug-fix/protocol.yaml analysis
+   specfirst --protocol starters/bug-fix/protocol.yaml analysis
    ```
  
 2. **Fix**:
    ```bash
-   specfirst --protocol examples/bug-fix/protocol.yaml fix
+   specfirst --protocol starters/bug-fix/protocol.yaml fix
    ```
  
 ## Setup (For a new project)
@@ -35,8 +35,8 @@ To use this protocol in your own project:
  
 2. Copy the protocol and templates:
    ```bash
-   cp /path/to/specfirst/examples/bug-fix/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/bug-fix/templates/* .specfirst/templates/
+   cp /path/to/specfirst/starters/bug-fix/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/bug-fix/templates/* .specfirst/templates/
    ```
  
 3. Update config (optional) or use the flag:

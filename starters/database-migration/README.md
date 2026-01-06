@@ -16,12 +16,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Requirements**:
    ```bash
-   specfirst --protocol examples/database-migration/protocol.yaml requirements
+   specfirst --protocol starters/database-migration/protocol.yaml requirements
    ```
  
 2. **Migration Plan**:
    ```bash
-   specfirst --protocol examples/database-migration/protocol.yaml migration-plan
+   specfirst --protocol starters/database-migration/protocol.yaml migration-plan
    ```
  
 ## Setup (For a new project)
@@ -36,8 +36,8 @@ To use this protocol in your own project:
  
 2. Copy the protocol and templates:
    ```bash
-   cp /path/to/specfirst/examples/database-migration/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/database-migration/templates/* .specfirst/templates/
+   cp /path/to/specfirst/starters/database-migration/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/database-migration/templates/* .specfirst/templates/
    ```
  
 3. Update config (optional) or use the flag:

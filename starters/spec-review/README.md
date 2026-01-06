@@ -16,12 +16,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Draft**:
    ```bash
-   specfirst --protocol examples/spec-review/protocol.yaml draft
+   specfirst --protocol starters/spec-review/protocol.yaml draft
    ```
  
 2. **Finalize**:
    ```bash
-   specfirst --protocol examples/spec-review/protocol.yaml finalize
+   specfirst --protocol starters/spec-review/protocol.yaml finalize
    ```
  
 ## Setup (For a new project)
@@ -36,8 +36,8 @@ To use this protocol in your own project:
  
 2. Copy the protocol and templates:
    ```bash
-   cp /path/to/specfirst/examples/spec-review/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/spec-review/templates/* .specfirst/templates/
+   cp /path/to/specfirst/starters/spec-review/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/spec-review/templates/* .specfirst/templates/
    ```
  
 3. Update config (optional) or use the flag:

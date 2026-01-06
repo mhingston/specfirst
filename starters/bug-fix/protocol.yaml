@@ -1,4 +1,5 @@
 name: "bug-fix"
+description: Standard workflow for analyzing and fixing bugs.
 version: "1.0"
 
 stages:

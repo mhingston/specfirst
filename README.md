@@ -122,13 +122,13 @@ SpecFirst will never:
 
 Complete, runnable examples with protocols and templates:
 
-- [Todo CLI](examples/todo-cli/README.md): Full workflow walkthrough for a simple CLI application
-- [Bug Fix](examples/bug-fix/README.md): Minimal 2-stage workflow for systematic bug fixes
-- [API Feature](examples/api-feature/README.md): Complete feature development with approvals and task decomposition
-- [Spec Review](examples/spec-review/README.md): Using cognitive scaffold commands to improve specification quality
-- [Refactoring](examples/refactoring/README.md): Structured code improvement with risk mitigation and verification
-- [Database Migration](examples/database-migration/README.md): Safe schema changes with approval gates and rollback planning
-- [Product Design](examples/product-design/README.md): Design flow from product vision to implementation handoff
+- [Todo CLI](starters/todo-cli/README.md): Full workflow walkthrough for a simple CLI application
+- [Bug Fix](starters/bug-fix/README.md): Minimal 2-stage workflow for systematic bug fixes
+- [API Feature](starters/api-feature/README.md): Complete feature development with approvals and task decomposition
+- [Spec Review](starters/spec-review/README.md): Using cognitive scaffold commands to improve specification quality
+- [Refactoring](starters/refactoring/README.md): Structured code improvement with risk mitigation and verification
+- [Database Migration](starters/database-migration/README.md): Safe schema changes with approval gates and rollback planning
+- [Product Design](starters/product-design/README.md): Design flow from product vision to implementation handoff
 
 ## Install
 
@@ -170,6 +170,53 @@ specfirst init
 specfirst status
 specfirst requirements
 ```
+
+## Starter Kits
+
+SpecFirst includes pre-built workflow starter kits for common scenarios. Starters bundle a protocol, templates, and optional skill files into a single package.
+
+### List Available Starters
+
+```bash
+specfirst starter list
+```
+
+### Create Project with Starter
+
+```bash
+mkdir my-project && cd my-project
+specfirst init --starter api-feature
+```
+
+This creates a workspace with the `api-feature` protocol and templates pre-configured.
+
+### Apply Starter to Existing Workspace
+
+```bash
+specfirst init
+specfirst starter apply bug-fix               # Apply bug-fix workflow
+specfirst starter apply api-feature --force   # Overwrite existing templates
+```
+
+### Interactive Selection
+
+```bash
+specfirst init --choose
+```
+
+This prompts you to select from available starters interactively.
+
+### Available Starters
+
+| Name | Description |
+|------|-------------|
+| `api-feature` | Full workflow with approvals for API features |
+| `bug-fix` | Lightweight 2-stage workflow for bug fixes |
+| `database-migration` | Migration workflow with rollback planning |
+| `product-design` | Full product design from brief to handover |
+| `refactoring` | Code refactoring workflow with risk assessment |
+| `spec-review` | Specification review workflow |
+| `todo-cli` | Simple example workflow |
 
 ## AI CLI Integration
 
@@ -291,6 +338,9 @@ specfirst --interactive --out interactive.prompt.txt
 ## Commands
 
 - `specfirst init` initializes `.specfirst/` with defaults.
+- `specfirst init --starter <name>` initializes with a specific starter kit.
+- `specfirst starter list` lists available starter kits.
+- `specfirst starter apply <name>` applies a starter kit to the current workspace.
 - `specfirst status` shows current workflow status.
 - `specfirst <stage-id>` renders a stage prompt to stdout.
 - `specfirst complete <stage-id> <output-files...>` records completion and stores artifacts.

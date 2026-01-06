@@ -82,7 +82,7 @@ This includes the content of `.specfirst/skills/design-principles.md` directly i
 
 Create any `.md` file in `.specfirst/skills/` and reference it via `{{ readFile "your-skill.md" }}`.
 
-See the [product-design example](../examples/product-design/) for a working demonstration of skills.
+See the [product-design example](../starters/product-design/) for a working demonstration of skills.
 
 **Security Note**: The `readFile` function only reads from `.specfirst/skills/` and rejects paths containing `..` or absolute paths.
 

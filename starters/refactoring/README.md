@@ -13,12 +13,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Current State**:
    ```bash
-   specfirst --protocol examples/refactoring/protocol.yaml current-state
+   specfirst --protocol starters/refactoring/protocol.yaml current-state
    ```
  
 2. **Goals**:
    ```bash
-   specfirst --protocol examples/refactoring/protocol.yaml goals
+   specfirst --protocol starters/refactoring/protocol.yaml goals
    ```
  
 ## Setup (For a new project)
@@ -33,8 +33,8 @@ To use this protocol in your own project:
  
 2. Copy the protocol and templates:
    ```bash
-   cp /path/to/specfirst/examples/refactoring/protocol.yaml .specfirst/protocols/
-   cp -r /path/to/specfirst/examples/refactoring/templates/* .specfirst/templates/
+   cp /path/to/specfirst/starters/refactoring/protocol.yaml .specfirst/protocols/
+   cp -r /path/to/specfirst/starters/refactoring/templates/* .specfirst/templates/
    ```
  
 3. Update config (optional) or use the flag:
