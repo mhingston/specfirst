@@ -192,7 +192,7 @@ constraints: {}
 
 const InteractiveTemplate = `# Interactive Spec Session - {{ .ProjectName }}
 
-You are facilitating a spec-first workflow. Ask any clarifying questions first,
+You are facilitating a SpecFirst workflow. Ask any clarifying questions first,
 then produce the requested artifacts for each stage in order.
 
 ## Workflow

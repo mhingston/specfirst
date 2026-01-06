@@ -112,7 +112,7 @@ SpecFirst will never:
 
 ## Documentation
 
-- [Philosophy](docs/PHILOSOPHY.md): The "why" behind Spec-First and the cognitive scaffold approach.
+- [Philosophy](docs/PHILOSOPHY.md): The "why" behind SpecFirst and the cognitive scaffold approach.
 - [Architecture & Mechanics](docs/ARCHITECTURE.md): Conceptual overview, state semantics, and archive philosophy.
 - [User Guide](docs/GUIDE.md): Detailed "how-to" and workflow examples.
 - [Protocol Reference](docs/PROTOCOLS.md): YAML schema and stage definitions.

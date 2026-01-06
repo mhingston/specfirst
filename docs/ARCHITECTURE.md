@@ -1,6 +1,6 @@
 # Architecture & Conceptual Overview
 
-This document explains the mechanics of Spec-First and how the various "moving parts" interact to create a verifiable engineering workflow.
+This document explains the mechanics of SpecFirst and how the various "moving parts" interact to create a verifiable engineering workflow.
 
 ## System Components
 
@@ -10,7 +10,7 @@ graph TD
     P -->|Controls| S[States]
     T -->|Generates| A[Artifacts]
     S -->|Persists to| D[Disk/state.json]
-    U[User] -->|Interacts with| CLI[Spec-First CLI]
+    U[User] -->|Interacts with| CLI[SpecFirst CLI]
     CLI -->|Executes| P
     CLI -->|Manages| AR[Archive]
 ```
@@ -30,7 +30,7 @@ When you run `spec archive`, the system captures more than just a snapshot of th
 3.  **Traceability:** Who approved each stage and when.
 
 **Workspace Debris vs. Tracked Artifacts:**
-Spec-First distinguishes between temporary files (debris) and meaningful records (artifacts). Archives focus on preserving the path taken to reach the result, ensuring that "restoring" an archive brings back the full context of the decision-making process, not just the final bytes.
+SpecFirst distinguishes between temporary files (debris) and meaningful records (artifacts). Archives focus on preserving the path taken to reach the result, ensuring that "restoring" an archive brings back the full context of the decision-making process, not just the final bytes.
 
 ## Restore Semantics
 *   **Restore** means recreating the exact state of a project at a specific point in time.
