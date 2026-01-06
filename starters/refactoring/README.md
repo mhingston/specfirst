@@ -13,12 +13,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Current State**:
    ```bash
-   specfirst --protocol starters/refactoring/protocol.yaml current-state | gemini -i
+   gemini -i "$(specfirst --protocol starters/refactoring/protocol.yaml current-state)"
    ```
  
 2. **Goals**:
    ```bash
-   specfirst --protocol starters/refactoring/protocol.yaml goals | gemini -i
+   gemini -i "$(specfirst --protocol starters/refactoring/protocol.yaml goals)"
    ```
  
 ## Setup (For a new project)
@@ -35,13 +35,6 @@ To use this protocol in your own project:
    ```bash
    specfirst init --starter refactoring
    ```
- 
-3. Update config (optional) or use the flag:
-   ```bash
-   # Option A: Edit .specfirst/config.yaml to set protocol: refactoring
-   # Option B: Use flag
-   specfirst current-state | gemini -i
-   ```
 
 ## Workflow
 
@@ -50,10 +43,10 @@ To use this protocol in your own project:
 Map existing code to understand what you're refactoring:
 ```bash
 # Map code to specifications
-specfirst trace ./path/to/current-code.go | gemini -i
+gemini -i "$(specfirst trace ./path/to/current-code.go)"
 
 # Generate current state analysis
-specfirst current-state | gemini -i > current-state.md
+gemini -i "$(specfirst current-state)" > current-state.md
 specfirst complete current-state ./current-state.md
 ```
 
@@ -61,7 +54,7 @@ specfirst complete current-state ./current-state.md
 
 Set clear, measurable refactoring objectives:
 ```bash
-specfirst goals | gemini -i > goals.md
+gemini -i "$(specfirst goals)" > goals.md
 specfirst complete goals ./goals.md
 ```
 
@@ -69,14 +62,14 @@ specfirst complete goals ./goals.md
 
 Before planning, surface potential problems:
 ```bash
-specfirst failure-modes ./goals.md | gemini -i
+gemini -i "$(specfirst failure-modes ./goals.md)"
 ```
 
 ### 4. Create Refactoring Plan
 
 Generate detailed step-by-step plan:
 ```bash
-specfirst plan | gemini -i > plan.md
+gemini -i "$(specfirst plan)" > plan.md
 specfirst complete plan ./plan.md
 ```
 
@@ -84,7 +77,7 @@ specfirst complete plan ./plan.md
 
 Follow the plan step by step:
 ```bash
-specfirst execute | gemini -i
+gemini -i "$(specfirst execute)"
 # Implement changes following the plan
 specfirst complete execute ./path/to/refactored-code.go ./tests/
 ```
@@ -93,7 +86,7 @@ specfirst complete execute ./path/to/refactored-code.go ./tests/
 
 Confirm goals met and behavior preserved:
 ```bash
-specfirst verify | gemini -i > verification-report.md
+gemini -i "$(specfirst verify)" > verification-report.md
 specfirst complete verify ./verification-report.md
 ```
 
@@ -101,7 +94,7 @@ specfirst complete verify ./verification-report.md
 
 Analyze the changes made:
 ```bash
-specfirst diff ./current-state.md ./verification-report.md | gemini -i
+gemini -i "$(specfirst diff ./current-state.md ./verification-report.md)"
 ```
 
 ## Timeline

@@ -15,12 +15,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Analysis**:
    ```bash
-   specfirst --protocol starters/bug-fix/protocol.yaml analysis | gemini -i
+   gemini -i "$(specfirst --protocol starters/bug-fix/protocol.yaml analysis)"
    ```
  
 2. **Fix**:
    ```bash
-   specfirst --protocol starters/bug-fix/protocol.yaml fix | gemini -i
+   gemini -i "$(specfirst --protocol starters/bug-fix/protocol.yaml fix)"
    ```
  
 ## Setup (For a new project)
@@ -44,7 +44,7 @@ To use this protocol in your own project:
 
 Generate the analysis prompt:
 ```bash
-specfirst analysis | gemini -i > analysis.md
+gemini -i "$(specfirst analysis)" > analysis.md
 ```
 
 This will prompt you to document:
@@ -63,7 +63,7 @@ specfirst complete analysis ./analysis.md
 
 Before implementing, surface potential issues:
 ```bash
-specfirst failure-modes ./analysis.md | gemini -i
+gemini -i "$(specfirst failure-modes ./analysis.md)"
 ```
 
 Review the output and update your analysis if needed.
@@ -72,7 +72,7 @@ Review the output and update your analysis if needed.
 
 Generate the implementation prompt (includes analysis automatically):
 ```bash
-specfirst fix | gemini -i
+gemini -i "$(specfirst fix)"
 ```
 
 Save the generated code changes, then complete:

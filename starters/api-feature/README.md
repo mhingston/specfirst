@@ -15,12 +15,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Requirements**:
    ```bash
-   specfirst --protocol starters/api-feature/protocol.yaml requirements | gemini -i
+   gemini -i "$(specfirst --protocol starters/api-feature/protocol.yaml requirements)"
    ```
  
 2. **Design**:
    ```bash
-   specfirst --protocol starters/api-feature/protocol.yaml design | gemini -i
+   gemini -i "$(specfirst --protocol starters/api-feature/protocol.yaml design)"
    ```
  
 ## Setup (For a new project)
@@ -51,7 +51,7 @@ To use this protocol in your own project:
 
 Generate the requirements prompt:
 ```bash
-specfirst requirements | gemini -i > requirements.md
+gemini -i "$(specfirst requirements)" > requirements.md
 ```
 
 Complete the stage:
@@ -63,7 +63,7 @@ specfirst complete requirements ./requirements.md
 
 Generate the design prompt (automatically includes requirements):
 ```bash
-specfirst design | gemini -i > design.md
+gemini -i "$(specfirst design)" > design.md
 ```
 
 Complete the stage:
@@ -94,20 +94,20 @@ Before decomposing, you can use cognitive commands:
 
 ```bash
 # Security review
-specfirst review ./design.md --persona security | gemini -i
+gemini -i "$(specfirst review ./design.md --persona security)"
 
 # Performance review
-specfirst review ./design.md --persona performance | gemini -i
+gemini -i "$(specfirst review ./design.md --persona performance)"
 
 # Surface assumptions
-specfirst assumptions ./design.md | gemini -i
+gemini -i "$(specfirst assumptions ./design.md)"
 ```
 
 ### 5. Break Down into Tasks
 
 Generate the decomposition prompt:
 ```bash
-specfirst decompose | gemini -i > tasks.yaml
+gemini -i "$(specfirst decompose)" > tasks.yaml
 ```
 
 Complete:
@@ -124,7 +124,7 @@ specfirst task
 
 Generate prompt for a specific task:
 ```bash
-specfirst task T1 | gemini -i
+gemini -i "$(specfirst task T1)"
 ```
 
 After implementing, complete it:
