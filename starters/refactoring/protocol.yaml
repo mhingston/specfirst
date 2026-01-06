@@ -41,6 +41,6 @@ stages:
     type: spec
     intent: review
     template: verify.md
-    depends_on: [execute]
+    depends_on: [execute, plan]
     inputs: [plan.md]
     outputs: [verification-report.md]

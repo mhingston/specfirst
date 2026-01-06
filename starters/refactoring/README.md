@@ -13,12 +13,12 @@ You can run this example immediately using the `--protocol` override:
  
 1. **Current State**:
    ```bash
-   gemini -i "$(specfirst --protocol starters/refactoring/protocol.yaml current-state)"
+   gemini "$(specfirst --protocol starters/refactoring/protocol.yaml current-state)"
    ```
  
 2. **Goals**:
    ```bash
-   gemini -i "$(specfirst --protocol starters/refactoring/protocol.yaml goals)"
+   gemini "$(specfirst --protocol starters/refactoring/protocol.yaml goals)"
    ```
  
 ## Setup (For a new project)
@@ -43,10 +43,10 @@ To use this protocol in your own project:
 Map existing code to understand what you're refactoring:
 ```bash
 # Map code to specifications
-gemini -i "$(specfirst trace ./path/to/current-code.go)"
+gemini "$(specfirst trace ./path/to/current-code.go)"
 
 # Generate current state analysis
-gemini -i "$(specfirst current-state)" > current-state.md
+gemini "$(specfirst current-state)" > current-state.md
 specfirst complete current-state ./current-state.md
 ```
 
@@ -54,7 +54,7 @@ specfirst complete current-state ./current-state.md
 
 Set clear, measurable refactoring objectives:
 ```bash
-gemini -i "$(specfirst goals)" > goals.md
+gemini "$(specfirst goals)" > goals.md
 specfirst complete goals ./goals.md
 ```
 
@@ -62,14 +62,14 @@ specfirst complete goals ./goals.md
 
 Before planning, surface potential problems:
 ```bash
-gemini -i "$(specfirst failure-modes ./goals.md)"
+gemini "$(specfirst failure-modes ./goals.md)"
 ```
 
 ### 4. Create Refactoring Plan
 
 Generate detailed step-by-step plan:
 ```bash
-gemini -i "$(specfirst plan)" > plan.md
+gemini "$(specfirst plan)" > plan.md
 specfirst complete plan ./plan.md
 ```
 
@@ -86,7 +86,7 @@ specfirst complete execute ./path/to/refactored-code.go ./tests/
 
 Confirm goals met and behavior preserved:
 ```bash
-gemini -i "$(specfirst verify)" > verification-report.md
+gemini "$(specfirst verify)" > verification-report.md
 specfirst complete verify ./verification-report.md
 ```
 
@@ -94,7 +94,7 @@ specfirst complete verify ./verification-report.md
 
 Analyze the changes made:
 ```bash
-gemini -i "$(specfirst diff ./current-state.md ./verification-report.md)"
+gemini "$(specfirst diff ./current-state.md ./verification-report.md)"
 ```
 
 ## Timeline

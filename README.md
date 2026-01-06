@@ -249,7 +249,10 @@ specfirst requirements | claude -p
 # GitHub Copilot (non-interactive)
 copilot -p "$(specfirst requirements)" --allow-all-tools
 
-# Gemini CLI
+# Gemini CLI (non-interactive prompt)
+gemini "$(specfirst implementation)"
+
+# Gemini CLI (via stdin)
 specfirst implementation | gemini
 ```
 
@@ -261,11 +264,11 @@ You can pipe AI output directly into `specfirst complete` using `-` to read from
 specfirst requirements | claude -p | specfirst complete requirements -
 ```
 
-**For any tool that reads from files**, use `--out`:
+**For any tool that reads from files or requires non-interactive output for redirection**, use the tool's one-shot mode:
 
 ```bash
-specfirst requirements --out prompt.txt
-some-ai-tool --input prompt.txt
+# Gemini one-shot to file
+gemini "$(specfirst requirements)" > requirements.md
 ```
 
 ## End-to-End Example (Default Protocol)
