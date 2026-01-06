@@ -1,20 +1,16 @@
 package cmd
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-	texttmpl "text/template"
 	"time"
 
 	"specfirst/internal/assets"
 	"specfirst/internal/config"
+	"specfirst/internal/prompt"
 	"specfirst/internal/protocol"
 	"specfirst/internal/state"
 	"specfirst/internal/store"
@@ -260,114 +256,31 @@ func compilePrompt(stage protocol.Stage, cfg config.Config, stageIDs []string) (
 }
 
 func promptHash(prompt string) string {
-	hash := sha256.Sum256([]byte(prompt))
-	return "sha256:" + hex.EncodeToString(hash[:])
+	return workspace.PromptHash(prompt)
 }
 
 func fileHash(path string) (string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	hash := sha256.Sum256(data)
-	return "sha256:" + hex.EncodeToString(hash[:]), nil
+	return workspace.FileHash(path)
 }
 
 func writeOutput(path string, content string) error {
-	if err := ensureDir(filepath.Dir(path)); err != nil {
-		return err
-	}
-	return os.WriteFile(path, []byte(content), 0644)
+	return workspace.WriteOutput(path, content)
 }
 
-func formatPrompt(format string, stageID string, prompt string) (string, error) {
-	if format == "text" {
-		return prompt, nil
-	}
-	if format == "json" {
-		payload := map[string]string{
-			"stage":  stageID,
-			"prompt": prompt,
-		}
-		data, err := json.MarshalIndent(payload, "", "  ")
-		if err != nil {
-			return "", err
-		}
-		return string(data) + "\n", nil
-	}
-	if format == "yaml" {
-		// Simple YAML output without external dependencies
-		escapedPrompt := strings.ReplaceAll(prompt, "\\", "\\\\")
-		escapedPrompt = strings.ReplaceAll(escapedPrompt, "\"", "\\\"")
-		return fmt.Sprintf("stage: %s\nprompt: |\n  %s\n", stageID, strings.ReplaceAll(escapedPrompt, "\n", "\n  ")), nil
-	}
-	if format == "shell" {
-		// Escape single quotes for shell safety
-		escapedStageID := strings.ReplaceAll(stageID, "'", "'\"'\"'")
-		delimiter := heredocDelimiter(prompt)
-		return fmt.Sprintf("SPECFIRST_STAGE='%s'\nSPECFIRST_PROMPT=$(cat <<'%s'\n%s\n%s\n)\n", escapedStageID, delimiter, prompt, delimiter), nil
-	}
-	return "", errors.New("unsupported format: " + format)
+func formatPrompt(format string, stageID string, promptString string) (string, error) {
+	return prompt.Format(format, stageID, promptString)
 }
 
-func applyMaxChars(prompt string, maxChars int) string {
-	if maxChars <= 0 {
-		return prompt
-	}
-	// Use runes to avoid truncating mid-UTF8 character
-	runes := []rune(prompt)
-	if len(runes) <= maxChars {
-		return prompt
-	}
-	return string(runes[:maxChars])
+func applyMaxChars(promptString string, maxChars int) string {
+	return prompt.ApplyMaxChars(promptString, maxChars)
 }
 
 func renderInlineTemplate(tmpl string, data any) (string, error) {
-	parsed, err := texttmpl.New("inline").Parse(tmpl)
-	if err != nil {
-		return "", err
-	}
-	var buf strings.Builder
-	if err := parsed.Execute(&buf, data); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	return tmplpkg.RenderInline(tmpl, data)
 }
 
 func collectFileHashes(root string) (map[string]string, error) {
-	files := map[string]string{}
-	info, err := os.Stat(root)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return files, nil
-		}
-		return nil, err
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("not a directory: %s", root)
-	}
-	err = filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			return nil
-		}
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
-		hash, err := fileHash(path)
-		if err != nil {
-			return err
-		}
-		files[rel] = hash
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return files, nil
+	return workspace.CollectFileHashes(root)
 }
 
 func listAllArtifacts() ([]tmplpkg.Input, error) {

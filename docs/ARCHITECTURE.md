@@ -36,3 +36,30 @@ SpecFirst distinguishes between temporary files (debris) and meaningful records 
 *   **Restore** means recreating the exact state of a project at a specific point in time.
 *   If a file existed in the workspace but not in the archive, it is **removed** upon restoration to ensure a clean, reproducible state.
 *   The `state.json` is restored alongside the workspace to allow the user to resume the workflow exactly where it left off.
+
+## Codebase Architecture
+The SpecFirst CLI implementation follows a **Layered Architecture** to separate concerns and ensure maintainability:
+
+### 1. Command Layer (`cmd/`)
+The entry point for user interaction. Commands are thin wrappers that:
+-   Parse CLI flags and arguments.
+-   Initialize the `Engine`.
+-   Delegate core logic to the `Engine`.
+-   Print results (success messages or warnings).
+
+### 2. Application Core (`internal/engine/`)
+The heart of the application logic. The `Engine`:
+-   Orchestrates the workflow.
+-   Manages `State`, `Config`, and `Protocol` loading/saving.
+-   Validates transitions and logic (e.g., `Check`, `CompleteStage`).
+-   Prevents illegal operations.
+
+### 3. Domain Primitives (`internal/protocol`, `internal/state`, `internal/task`)
+Pure data structures and validation logic for the core concepts of SpecFirst. These packages have minimal dependencies.
+
+### 4. Infrastructure & Utilities (`internal/workspace`, `internal/store`, `internal/prompt`, `internal/template`)
+Low-level services that handle technical details:
+-   **`workspace`**: File system operations, artifact resolution, hashing, and atomic writes.
+-   **`store`**: Path management for standard directories (`.specfirst/`).
+-   **`template`**: Text processing and rendering.
+

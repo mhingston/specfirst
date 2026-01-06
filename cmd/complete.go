@@ -3,16 +3,12 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
 	"io"
+	"specfirst/internal/engine"
 	"specfirst/internal/protocol"
-	"specfirst/internal/state"
-	"specfirst/internal/store"
-	"specfirst/internal/task"
 	"strings"
 )
 
@@ -26,18 +22,10 @@ var completeCmd = &cobra.Command{
 		stageID := args[0]
 		var outputFiles []string
 
-		// Load config and protocol once
-		cfg, err := loadConfig()
+		// Load Engine
+		eng, err := engine.Load(protocolFlag)
 		if err != nil {
 			return err
-		}
-		proto, err := loadProtocol(activeProtocolName(cfg))
-		if err != nil {
-			return err
-		}
-		stage, ok := proto.StageByID(stageID)
-		if !ok {
-			return fmt.Errorf("unknown stage: %s", stageID)
 		}
 
 		var stdinContent []byte
@@ -45,6 +33,12 @@ var completeCmd = &cobra.Command{
 			outputFiles = make([]string, len(args[1:]))
 			copy(outputFiles, args[1:])
 			// First pass: identify stdin and map to target filenames
+			// Note: We need stage info to do wildcard expansion if stdin used with "-"
+			stage, ok := eng.Protocol.StageByID(stageID)
+			if !ok {
+				return fmt.Errorf("unknown stage: %s", stageID)
+			}
+
 			for i, arg := range outputFiles {
 				if arg == "-" || strings.HasSuffix(arg, "=-") {
 					if stdinContent == nil {
@@ -67,20 +61,26 @@ var completeCmd = &cobra.Command{
 				}
 			}
 		} else {
+			// Auto-discovery requires stage info
+			stage, ok := eng.Protocol.StageByID(stageID)
+			if !ok {
+				return fmt.Errorf("unknown stage: %s", stageID)
+			}
+
 			// Auto-discover changed files
-			discovered, err := discoverChangedFiles()
+			discovered, err := discoverChangedFiles() // Legacy helper for now, or move to workspace?
 			if err != nil {
 				return err
 			}
 			if len(discovered) == 0 {
-				return fmt.Errorf("no changed files detected (untracked or modified)")
+				return fmt.Errorf("no changed files detected (untracked or modified)") // Using legacy error msg
 			}
 
 			// Filter discovered files against stage outputs
 			if len(stage.Outputs) > 0 {
 				filtered := make([]string, 0, len(discovered))
 				for _, file := range discovered {
-					rel, err := outputRelPath(file)
+					rel, err := outputRelPath(file) // Legacy helper
 					if err != nil {
 						continue // Skip invalid paths
 					}
@@ -93,40 +93,18 @@ var completeCmd = &cobra.Command{
 				}
 				outputFiles = filtered
 			} else {
-				// If no outputs defined, we don't know what to include automatically.
 				return fmt.Errorf("no outputs defined for stage %q; cannot auto-discover changed files. Please list files explicitly.", stageID)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Auto-detected %d changed files matching stage outputs: %v\n", len(outputFiles), outputFiles)
 		}
 		promptFile, _ := cmd.Flags().GetString("prompt-file")
 
-		s, err := loadState()
-		if err != nil {
-			return err
-		}
-		s = ensureStateInitialized(s, proto)
-
-		if !stageNoStrict {
-			if err := requireStageDependencies(s, stage); err != nil {
-				return err
-			}
-		}
-
-		// Check for duplicate completion. A stage is considered completed if it exists
-		// in the completed_stages list or has an entry in stage_outputs.
-		_, hasOutput := s.StageOutputs[stageID]
-		if (s.IsStageCompleted(stageID) || hasOutput) && !completeForce {
-			return fmt.Errorf("stage %s already completed; use --force to overwrite", stageID)
-		}
-
-		// Write stdin content to workspace before validation
+		// Write stdin content to workspace before passing to engine
 		if stdinContent != nil {
-			// We only want to write to files that were originally mapped to stdin.
-			// Since outputFiles was modified in the first pass, we check the original args.
 			for i, arg := range args[1:] {
 				if arg == "-" || strings.HasSuffix(arg, "=-") {
 					target := outputFiles[i]
-					resolved, err := resolveOutputPath(target)
+					resolved, err := resolveOutputPath(target) // Legacy helper
 					if err != nil {
 						return err
 					}
@@ -137,117 +115,8 @@ var completeCmd = &cobra.Command{
 			}
 		}
 
-		if err := validateOutputs(stage, outputFiles); err != nil {
-			return err
-		}
-
-		// Task List Validation
-		if stage.Type == "decompose" {
-			for _, file := range outputFiles {
-				content, err := os.ReadFile(file)
-				if err != nil {
-					return fmt.Errorf("failed to read task file %s: %w", file, err)
-				}
-				taskList, err := task.Parse(string(content))
-				if err != nil {
-					return fmt.Errorf("failed to parse task list in %s: %w", file, err)
-				}
-				if warnings := taskList.Validate(); len(warnings) > 0 {
-					return fmt.Errorf("invalid task list in %s:\n%s", file, strings.Join(warnings, "\n"))
-				}
-			}
-		}
-
-		var oldFiles []string
-		if completeForce {
-			if old, exists := s.StageOutputs[stageID]; exists {
-				oldFiles = old.Files
-				if len(outputFiles) < len(oldFiles) {
-					fmt.Fprintf(cmd.ErrOrStderr(), "Warning: forcing completion with %d files, but stage previously had %d files. Obsolete artifacts will be removed.\n", len(outputFiles), len(oldFiles))
-				}
-			}
-		}
-
-		stored := make([]string, 0, len(outputFiles))
-		for _, output := range outputFiles {
-			rel, err := outputRelPath(output)
-			if err != nil {
-				return err
-			}
-			resolved, err := resolveOutputPath(output)
-			if err != nil {
-				return err
-			}
-			dest := store.ArtifactsPath(stageID, rel)
-			if err := copyFile(resolved, dest); err != nil {
-				return err
-			}
-			stored = append(stored, filepath.ToSlash(filepath.Join(stageID, rel)))
-		}
-
-		// Cleanup obsolete artifacts after successful copy
-		if completeForce && len(oldFiles) > 0 {
-			newFilesMap := make(map[string]bool)
-			for _, f := range stored {
-				newFilesMap[f] = true
-			}
-			for _, oldFile := range oldFiles {
-				if !newFilesMap[oldFile] {
-					abs, err := artifactAbsFromState(oldFile)
-					if err == nil {
-						_ = os.Remove(abs)
-					}
-				}
-			}
-		}
-
-		var promptHashValue string
-		if promptFile != "" {
-			hash, err := fileHash(promptFile)
-			if err != nil {
-				return err
-			}
-			promptHashValue = hash
-		} else {
-			prompt, err := compilePrompt(stage, cfg, stageIDList(proto))
-			if err != nil {
-				return err
-			}
-			promptHashValue = promptHash(prompt)
-		}
-
-		s.StageOutputs[stageID] = state.StageOutput{
-			CompletedAt: time.Now().UTC(),
-			Files:       stored,
-			PromptHash:  promptHashValue,
-		}
-		if !s.IsStageCompleted(stageID) {
-			s.CompletedStages = append(s.CompletedStages, stageID)
-		}
-
-		// Update CurrentStage to the NEXT stage only if we are progressing
-		currentIndex := -1
-		completedIndex := -1
-		for i, stg := range proto.Stages {
-			if stg.ID == s.CurrentStage {
-				currentIndex = i
-			}
-			if stg.ID == stageID {
-				completedIndex = i
-			}
-		}
-
-		// If we completed the current stage (or a later one), bump CurrentStage to the next one
-		if completedIndex >= currentIndex {
-			if completedIndex+1 < len(proto.Stages) {
-				s.CurrentStage = proto.Stages[completedIndex+1].ID
-			} else {
-				// We reached the end. Optional: verify if we want to signal "done" differently.
-				// For now, we leave it at the last stage, but since it's in CompletedStages, users know it's done.
-			}
-		}
-
-		if err := saveState(s); err != nil {
+		// Delegate to Engine
+		if err := eng.CompleteStage(stageID, outputFiles, completeForce, promptFile); err != nil {
 			return err
 		}
 
