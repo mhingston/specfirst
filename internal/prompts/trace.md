@@ -54,11 +54,16 @@ Also flag:
 - 🟢 **Fully Implemented**: Complete coverage
 - ⚫ **Obsolete Code**: Code exists but spec removed
 
-**CRITICAL: Output ONLY the table and the flags. Do not include any introductory text, preamble, conversational filler, or conclusion.**
-
----
 
 ## Specification
 **Source**: {{.Source}}
 
 {{.Spec}}
+
+---
+
+## Output Format Constraints
+CRITICAL: You must output ONLY the table and the flags.
+- Do NOT include any introductory text, preamble, conversational filler, or conclusion.
+- Do NOT include markdown code block fences (```markdown ... ```) around the content.
+- Start directly with the content.
