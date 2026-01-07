@@ -127,6 +127,7 @@ Complete, runnable examples with protocols and templates:
 - [API Feature](starters/api-feature/README.md): Complete feature development with approvals and task decomposition
 - [Spec Review](starters/spec-review/README.md): Using cognitive scaffold commands to improve specification quality
 - [Refactoring](starters/refactoring/README.md): Structured code improvement with risk mitigation and verification
+- [Code Review](starters/code-review/README.md): Staged, gated review workflow designed to converge
 - [Database Migration](starters/database-migration/README.md): Safe schema changes with approval gates and rollback planning
 - [Product Design](starters/product-design/README.md): Design flow from product vision to implementation handoff
 
@@ -212,6 +213,7 @@ This prompts you to select from available starters interactively.
 |------|-------------|
 | `api-feature` | Full workflow with approvals for API features |
 | `bug-fix` | Lightweight 2-stage workflow for bug fixes |
+| `code-review` | Staged, gated review workflow designed to converge |
 | `database-migration` | Migration workflow with rollback planning |
 | `product-design` | Full product design from brief to handover |
 | `refactoring` | Code refactoring workflow with risk assessment |

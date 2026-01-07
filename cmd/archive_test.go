@@ -11,9 +11,35 @@ import (
 	"github.com/spf13/cobra"
 
 	"specfirst/internal/assets"
-	"specfirst/internal/snapshot"
-	"specfirst/internal/store"
+	"specfirst/internal/domain"
+	"specfirst/internal/repository"
 )
+
+// testCreateParams creates a CreateParams for testing by loading current workspace state.
+func testCreateParams(t *testing.T) repository.CreateParams {
+	t.Helper()
+	cfg, err := repository.LoadConfig(repository.ConfigPath())
+	if err != nil {
+		// Config might not exist in tests, use defaults
+		cfg = domain.Config{Protocol: assets.DefaultProtocolName}
+	}
+	if cfg.Protocol == "" {
+		cfg.Protocol = assets.DefaultProtocolName
+	}
+	proto, err := repository.LoadProtocol(repository.ProtocolsPath(cfg.Protocol + ".yaml"))
+	if err != nil {
+		t.Fatalf("load protocol: %v", err)
+	}
+	s, err := repository.LoadState(repository.StatePath())
+	if err != nil {
+		s = domain.NewState(proto.Name)
+	}
+	return repository.CreateParams{
+		Config:   cfg,
+		Protocol: proto,
+		State:    s,
+	}
+}
 
 func TestCreateArchiveRequiresTemplates(t *testing.T) {
 	wd, err := os.Getwd()
@@ -29,15 +55,16 @@ func TestCreateArchiveRequiresTemplates(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	if err := os.MkdirAll(store.ProtocolsPath(), 0755); err != nil {
+	if err := os.MkdirAll(repository.ProtocolsPath(), 0755); err != nil {
 		t.Fatalf("mkdir protocols: %v", err)
 	}
-	if err := os.WriteFile(store.ProtocolsPath(assets.DefaultProtocolName+".yaml"), []byte(assets.DefaultProtocolYAML), 0644); err != nil {
+	if err := os.WriteFile(repository.ProtocolsPath(assets.DefaultProtocolName+".yaml"), []byte(assets.DefaultProtocolYAML), 0644); err != nil {
 		t.Fatalf("write protocol: %v", err)
 	}
 
-	mgr := snapshot.NewManager(store.ArchivesPath())
-	err = mgr.Create("1.0", nil, "")
+	params := testCreateParams(t)
+	mgr := repository.NewSnapshotRepository(repository.ArchivesPath())
+	err = mgr.Create("1.0", nil, "", params)
 	if err == nil {
 		t.Fatalf("expected error when templates directory is missing")
 	}
@@ -60,7 +87,7 @@ func TestArchiveRestoreRejectsProtocolMismatch(t *testing.T) {
 		t.Fatalf("chdir: %v", err)
 	}
 
-	archiveRoot := store.ArchivesPath("mismatch-test")
+	archiveRoot := repository.ArchivesPath("mismatch-test")
 	if err := os.MkdirAll(filepath.Join(archiveRoot, "protocols"), 0755); err != nil {
 		t.Fatalf("mkdir protocols: %v", err)
 	}
@@ -118,6 +145,7 @@ constraints: {}
 		t.Fatalf("set force flag: %v", err)
 	}
 
+	// Re-using archiveRestoreCmd here (assumed exported)
 	err = archiveRestoreCmd.RunE(cmd, []string{"mismatch-test"})
 	if err == nil || !strings.Contains(err.Error(), "archive metadata protocol mismatch") {
 		t.Fatalf("expected metadata mismatch error, got %v", err)
@@ -139,19 +167,19 @@ func TestCreateArchive_MissingArtifact(t *testing.T) {
 	}
 
 	// Setup necessary directories and files
-	if err := os.MkdirAll(store.ProtocolsPath(), 0755); err != nil {
+	if err := os.MkdirAll(repository.ProtocolsPath(), 0755); err != nil {
 		t.Fatalf("mkdir protocols: %v", err)
 	}
-	if err := os.WriteFile(store.ProtocolsPath(assets.DefaultProtocolName+".yaml"), []byte(assets.DefaultProtocolYAML), 0644); err != nil {
+	if err := os.WriteFile(repository.ProtocolsPath(assets.DefaultProtocolName+".yaml"), []byte(assets.DefaultProtocolYAML), 0644); err != nil {
 		t.Fatalf("write protocol: %v", err)
 	}
-	if err := os.MkdirAll(store.TemplatesPath(), 0755); err != nil {
+	if err := os.MkdirAll(repository.TemplatesPath(), 0755); err != nil {
 		t.Fatalf("mkdir templates: %v", err)
 	}
-	if err := os.WriteFile(store.TemplatesPath("requirements.md"), []byte("# Requirements"), 0644); err != nil {
+	if err := os.WriteFile(repository.TemplatesPath("requirements.md"), []byte("# Requirements"), 0644); err != nil {
 		t.Fatalf("write template: %v", err)
 	}
-	if err := os.WriteFile(store.ConfigPath(), []byte("protocol: "+assets.DefaultProtocolName+"\n"), 0644); err != nil {
+	if err := os.WriteFile(repository.ConfigPath(), []byte("protocol: "+assets.DefaultProtocolName+"\n"), 0644); err != nil {
 		t.Fatalf("write config: %v", err)
 	}
 
@@ -167,17 +195,18 @@ func TestCreateArchive_MissingArtifact(t *testing.T) {
   }
 }
 `, assets.DefaultProtocolName)
-	if err := os.MkdirAll(filepath.Dir(store.StatePath()), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(repository.StatePath()), 0755); err != nil {
 		t.Fatalf("mkdir state dir: %v", err)
 	}
-	if err := os.WriteFile(store.StatePath(), []byte(stateJSON), 0644); err != nil {
+	if err := os.WriteFile(repository.StatePath(), []byte(stateJSON), 0644); err != nil {
 		t.Fatalf("write state: %v", err)
 	}
 
-	mgr := snapshot.NewManager(store.ArchivesPath())
+	params := testCreateParams(t)
+	mgr := repository.NewSnapshotRepository(repository.ArchivesPath())
 
 	// Try to create archive - should fail because requirements/foo.md is missing
-	err = mgr.Create("1.0", nil, "")
+	err = mgr.Create("1.0", nil, "", params)
 	if err == nil {
 		t.Fatalf("expected error for missing artifact")
 	}
@@ -186,7 +215,7 @@ func TestCreateArchive_MissingArtifact(t *testing.T) {
 	}
 
 	// Now create the artifact and it should succeed
-	artifactPath := store.ArtifactsPath("requirements", "foo.md")
+	artifactPath := repository.ArtifactsPath("requirements", "foo.md")
 	if err := os.MkdirAll(filepath.Dir(artifactPath), 0755); err != nil {
 		t.Fatalf("mkdir artifact dir: %v", err)
 	}
@@ -194,7 +223,8 @@ func TestCreateArchive_MissingArtifact(t *testing.T) {
 		t.Fatalf("write artifact: %v", err)
 	}
 
-	err = mgr.Create("1.0", nil, "")
+	params = testCreateParams(t) // Reload to pick up updated state
+	err = mgr.Create("1.0", nil, "", params)
 	if err != nil {
 		t.Fatalf("unexpected error after creating artifact: %v", err)
 	}

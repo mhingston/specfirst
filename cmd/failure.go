@@ -6,7 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"specfirst/internal/prompts"
+	"specfirst/internal/engine/prompt"
+	"specfirst/internal/engine/system"
+	"specfirst/internal/repository"
 )
 
 var failureCmd = &cobra.Command{
@@ -31,21 +33,21 @@ The output is a structured prompt suitable for AI assistants or human reviewers.
 			return fmt.Errorf("reading spec %s: %w", specPath, err)
 		}
 
-		prompt, err := prompts.Render("failure-modes.md", prompts.SpecData{
+		promptStr, err := system.Render("failure-modes.md", system.SpecData{
 			Spec: string(content),
 		})
 		if err != nil {
 			return fmt.Errorf("rendering failure-modes prompt: %w", err)
 		}
 
-		prompt = applyMaxChars(prompt, stageMaxChars)
-		formatted, err := formatPrompt(stageFormat, "failure-modes", prompt)
+		promptStr = prompt.ApplyMaxChars(promptStr, stageMaxChars)
+		formatted, err := prompt.Format(stageFormat, "failure-modes", promptStr)
 		if err != nil {
 			return err
 		}
 
 		if stageOut != "" {
-			if err := writeOutput(stageOut, formatted); err != nil {
+			if err := repository.WriteOutput(stageOut, formatted); err != nil {
 				return err
 			}
 		}

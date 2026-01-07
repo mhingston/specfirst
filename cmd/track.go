@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"specfirst/internal/snapshot"
-	"specfirst/internal/store"
+	"specfirst/internal/app"
+	"specfirst/internal/repository"
 )
 
 var trackCmd = &cobra.Command{
@@ -23,8 +23,19 @@ var trackCreateCmd = &cobra.Command{
 		name := args[0]
 		notes, _ := cmd.Flags().GetString("notes")
 
-		mgr := snapshot.NewManager(store.TracksPath())
-		if err := mgr.Create(name, []string{"track"}, notes); err != nil {
+		application, err := app.Load(protocolFlag)
+		if err != nil {
+			return err
+		}
+
+		// Use repository for tracks
+		mgr := repository.NewSnapshotRepository(repository.TracksPath())
+		params := repository.CreateParams{
+			Config:   application.Config,
+			Protocol: application.Protocol,
+			State:    application.State,
+		}
+		if err := mgr.Create(name, []string{"track"}, notes, params); err != nil {
 			return err
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "Created track %s\n", name)
@@ -36,7 +47,7 @@ var trackListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List tracks",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		mgr := snapshot.NewManager(store.TracksPath())
+		mgr := repository.NewSnapshotRepository(repository.TracksPath())
 		tracks, err := mgr.List()
 		if err != nil {
 			return err
@@ -56,17 +67,13 @@ var trackSwitchCmd = &cobra.Command{
 		name := args[0]
 		force, _ := cmd.Flags().GetBool("force")
 
-		// Safety check similar to archive restore
 		if !force {
-			if _, err := os.Stat(store.ConfigPath()); err == nil {
-				// We should probably explicitly warn that switching OVERWRITES current workspace.
-				// Ideally we'd auto-snapshot "backup" track?
-				// For now, consistent with archive logic: require --force if data exists.
+			if _, err := os.Stat(repository.ConfigPath()); err == nil {
 				return fmt.Errorf("workspace has data; use --force to overwrite with track contents")
 			}
 		}
 
-		mgr := snapshot.NewManager(store.TracksPath())
+		mgr := repository.NewSnapshotRepository(repository.TracksPath())
 		if err := mgr.Restore(name, force); err != nil {
 			return err
 		}
@@ -80,7 +87,7 @@ var trackDiffCmd = &cobra.Command{
 	Short: "Compare artifacts between two tracks",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		mgr := snapshot.NewManager(store.TracksPath())
+		mgr := repository.NewSnapshotRepository(repository.TracksPath())
 		added, removed, changed, err := mgr.Compare(args[0], args[1])
 		if err != nil {
 			return err
@@ -119,30 +126,29 @@ var trackMergeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sourceTrack := args[0]
 
-		// 1. Validate source track exists
-		mgr := snapshot.NewManager(store.TracksPath())
-		// We can't easily "compare" current workspace vs track using snapshot.Compare directly
-		// because snapshot.Compare expects two *snapshot names*.
-		// But "current workspace" isn't a snapshot.
+		application, err := app.Load(protocolFlag)
+		if err != nil {
+			return err
+		}
 
-		// Strategy: Create a temporary snapshot of current workspace?
-		// Yes, "MERGE_HEAD" equivalent.
+		params := repository.CreateParams{
+			Config:   application.Config,
+			Protocol: application.Protocol,
+			State:    application.State,
+		}
+
+		mgr := repository.NewSnapshotRepository(repository.TracksPath())
+
 		currentSnapshot := "merge-target-temp"
-		_ = os.RemoveAll(store.TracksPath(currentSnapshot)) // Clean up previous if any
+		_ = os.RemoveAll(repository.TracksPath(currentSnapshot))
 
-		if err := mgr.Create(currentSnapshot, []string{"temp"}, "Temporary snapshot for merge"); err != nil {
+		if err := mgr.Create(currentSnapshot, []string{"temp"}, "Temporary snapshot for merge", params); err != nil {
 			return fmt.Errorf("failed to snapshot current workspace for comparison: %w", err)
 		}
 		defer func() {
-			_ = os.RemoveAll(store.TracksPath(currentSnapshot))
+			_ = os.RemoveAll(repository.TracksPath(currentSnapshot))
 		}()
 
-		// 2. Diff source track vs current (temp)
-		// We want to see what is in Source that is different from Target.
-		// Compare(left, right) -> changes from left to right?
-		// compareHashes: right is "new".
-		// We want to merge Source INTO Target.
-		// So we want to see diff(Target, Source).
 		added, removed, changed, err := mgr.Compare(currentSnapshot, sourceTrack)
 		if err != nil {
 			return err
@@ -152,21 +158,6 @@ var trackMergeCmd = &cobra.Command{
 			fmt.Fprintln(cmd.OutOrStdout(), "Tracks are identical. Nothing to merge.")
 			return nil
 		}
-
-		// 3. Generate Merge Prompt
-		// We need to render internal/prompts/merge.md
-		// We'll use a hack or simple replacement since we handle template rendering elsewhere differently?
-		// internal/prompts templates are usually loaded via embedded FS or file?
-		// Actually, `internal/prompts` is where the source code lives.
-		// `store.TemplatesPath` user templates.
-		// We should probably just hardcode the prompt usage here or use `prompt` package if it supports dynamic?
-		// Let's manually construct the prompt context data and use `text/template` or the existing `template` pkg?
-		// `specfirst/internal/template` pkg `Render` function takes a filename.
-
-		// We need to point to the template file.
-		// Ideally we ship standard prompts in binary.
-		// For now, I'll attempt to assume it's available or write a temporary one.
-		// Or better: Just generate the text directly here to avoid dependency on "installed" templates.
 
 		mergePromptPath := "MERGE_PLAN_PROMPT.md"
 		promptContent := fmt.Sprintf(`# Merge Plan for %s into Current Workspace

@@ -12,7 +12,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"specfirst/internal/store"
+	"specfirst/internal/repository"
 )
 
 // EmbeddedFS is an optional filesystem containing starter kits.
@@ -206,16 +206,16 @@ func Apply(name string, force bool, updateConfig bool) error {
 	}
 
 	// Ensure workspace directories exist
-	if err := ensureDir(store.ProtocolsPath()); err != nil {
+	if err := ensureDir(repository.ProtocolsPath()); err != nil {
 		return err
 	}
 	// Namespace templates: .specfirst/templates/<starter-name>/
-	templatesDir := store.TemplatesPath(name)
+	templatesDir := repository.TemplatesPath(name)
 	if err := ensureDir(templatesDir); err != nil {
 		return err
 	}
 	if starter.SkillsDir != "" {
-		if err := ensureDir(store.SkillsPath()); err != nil {
+		if err := ensureDir(repository.SkillsPath()); err != nil {
 			return err
 		}
 	}
@@ -227,7 +227,7 @@ func Apply(name string, force bool, updateConfig bool) error {
 		return fmt.Errorf("rewriting protocol: %w", err)
 	}
 
-	destProtocol := store.ProtocolsPath(name + ".yaml")
+	destProtocol := repository.ProtocolsPath(name + ".yaml")
 	if !force {
 		if _, err := os.Stat(destProtocol); err == nil {
 			// Protocol exists, don't overwrite
@@ -249,7 +249,7 @@ func Apply(name string, force bool, updateConfig bool) error {
 
 	// 3. Copy skills if present
 	if starter.SkillsDir != "" {
-		if err := copyDirFromFS(starter.SourceFS, starter.SkillsDir, store.SkillsPath(), force); err != nil {
+		if err := copyDirFromFS(starter.SourceFS, starter.SkillsDir, repository.SkillsPath(), force); err != nil {
 			return fmt.Errorf("copying skills: %w", err)
 		}
 	}
@@ -349,7 +349,7 @@ func copyDirFromFS(sys fs.FS, srcDir, dstDir string, force bool) error {
 
 // updateConfigProtocol updates config.yaml with the starter protocol.
 func updateConfigProtocol(protocolName string, sys fs.FS, defaultsPath string, force bool) error {
-	configPath := store.ConfigPath()
+	configPath := repository.ConfigPath()
 
 	// Read existing config
 	data, err := os.ReadFile(configPath)

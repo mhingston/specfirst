@@ -7,8 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"specfirst/internal/snapshot"
-	"specfirst/internal/store"
+	"specfirst/internal/app"
+	"specfirst/internal/domain"
+	"specfirst/internal/repository"
 )
 
 var archiveCmd = &cobra.Command{
@@ -20,8 +21,12 @@ var archiveCmd = &cobra.Command{
 		tags, _ := cmd.Flags().GetStringSlice("tag")
 		notes, _ := cmd.Flags().GetString("notes")
 
-		mgr := snapshot.NewManager(store.ArchivesPath())
-		if err := mgr.Create(version, tags, notes); err != nil {
+		application, err := app.Load(protocolFlag)
+		if err != nil {
+			return err
+		}
+
+		if err := application.CreateSnapshot(version, tags, notes); err != nil {
 			return err
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "Archived version %s\n", version)
@@ -33,8 +38,20 @@ var archiveListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List archives",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		mgr := snapshot.NewManager(store.ArchivesPath())
-		versions, err := mgr.List()
+		// ListSnapshots is repository logic, but accessed via App mostly for convenience.
+		// Since List doesn't require loaded state, we can use app.ListSnapshots if implemented statically?
+		// No, app methods are instance methods.
+		// But loading app entire state just to list archives is heavy?
+		// Let's use repository directly for LIST if we want speed, or instantiate dummy app?
+		// Or update app to have static utility?
+		// For now, let's load app. It's safe.
+
+		// Actually, loading app requires .specfirst to exist.
+		// If listing archives, maybe .specfirst exists.
+		// But what if we are listing invalid workspace?
+		// Using repository direct is safer for LIST.
+		repo := repository.NewSnapshotRepository(repository.ArchivesPath())
+		versions, err := repo.List()
 		if err != nil {
 			return err
 		}
@@ -50,10 +67,11 @@ var archiveShowCmd = &cobra.Command{
 	Short: "Show archive metadata",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := snapshot.ValidateName(args[0]); err != nil {
-			return err
+		if !domain.IsValidSnapshotName(args[0]) {
+			return fmt.Errorf("invalid snapshot name: %s", args[0])
 		}
-		path := filepath.Join(store.ArchivesPath(args[0]), "metadata.json")
+		// Direct file access via repo path helper
+		path := filepath.Join(repository.ArchivesPath(args[0]), "metadata.json")
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return err
@@ -72,13 +90,23 @@ var archiveRestoreCmd = &cobra.Command{
 		force, _ := cmd.Flags().GetBool("force")
 
 		if !force {
-			if _, err := os.Stat(store.ConfigPath()); err == nil {
-				return fmt.Errorf("workspace has data; use --force to overwrite")
+			// Sev2 Fix: Unsafe check. Previously only checked ConfigPath.
+			// Now we check if .specfirst exists and has any content.
+			specDir := repository.SpecPath()
+			if info, err := os.Stat(specDir); err == nil && info.IsDir() {
+				entries, err := os.ReadDir(specDir)
+				if err == nil && len(entries) > 0 {
+					return fmt.Errorf("workspace is not empty; use --force to overwrite")
+				}
 			}
 		}
 
-		mgr := snapshot.NewManager(store.ArchivesPath())
-		if err := mgr.Restore(version, force); err != nil {
+		// Restore doesn't need "App" loaded since it overwrites it.
+		// Uses repository directly or app helper?
+		// We can't load app if config is corrupt/missing, which Restore might fix.
+		// So using repo directly is better or static helper.
+		repo := repository.NewSnapshotRepository(repository.ArchivesPath())
+		if err := repo.Restore(version, force); err != nil {
 			return err
 		}
 
@@ -92,8 +120,8 @@ var archiveCompareCmd = &cobra.Command{
 	Short: "Compare archived artifacts between versions",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		mgr := snapshot.NewManager(store.ArchivesPath())
-		added, removed, changed, err := mgr.Compare(args[0], args[1])
+		repo := repository.NewSnapshotRepository(repository.ArchivesPath())
+		added, removed, changed, err := repo.Compare(args[0], args[1])
 		if err != nil {
 			return err
 		}

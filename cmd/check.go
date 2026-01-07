@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"specfirst/internal/engine"
+	"specfirst/internal/app"
 
 	"github.com/spf13/cobra"
 )
@@ -12,12 +12,12 @@ var checkCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		failOnWarnings, _ := cmd.Flags().GetBool("fail-on-warnings")
 
-		eng, err := engine.Load(protocolFlag)
+		application, err := app.Load(protocolFlag)
 		if err != nil {
 			return err
 		}
 
-		return eng.Check(failOnWarnings)
+		return application.Check(failOnWarnings)
 	},
 }
 

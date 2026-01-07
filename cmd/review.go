@@ -6,6 +6,9 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"specfirst/internal/engine/prompt"
+	"specfirst/internal/repository"
 )
 
 var reviewPersona string
@@ -32,19 +35,19 @@ The output is a structured prompt suitable for AI assistants or human reviewers.
 			return fmt.Errorf("reading spec %s: %w", specPath, err)
 		}
 
-		prompt, err := generateReviewPrompt(string(content), specPath, reviewPersona)
+		promptStr, err := generateReviewPrompt(string(content), specPath, reviewPersona)
 		if err != nil {
 			return err
 		}
 
-		prompt = applyMaxChars(prompt, stageMaxChars)
-		formatted, err := formatPrompt(stageFormat, "review", prompt)
+		promptStr = prompt.ApplyMaxChars(promptStr, stageMaxChars)
+		formatted, err := prompt.Format(stageFormat, "review", promptStr)
 		if err != nil {
 			return err
 		}
 
 		if stageOut != "" {
-			if err := writeOutput(stageOut, formatted); err != nil {
+			if err := repository.WriteOutput(stageOut, formatted); err != nil {
 				return err
 			}
 		}

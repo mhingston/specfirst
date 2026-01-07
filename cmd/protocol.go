@@ -11,7 +11,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"specfirst/internal/assets"
-	"specfirst/internal/store"
+	"specfirst/internal/repository"
+	"specfirst/internal/utils"
 )
 
 // validProtocolNamePattern matches safe protocol names (alphanumeric, hyphens, underscores)
@@ -26,7 +27,7 @@ var protocolListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available protocols",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		entries, err := os.ReadDir(store.ProtocolsPath())
+		entries, err := os.ReadDir(repository.ProtocolsPath())
 		if err != nil {
 			return err
 		}
@@ -58,7 +59,7 @@ var protocolShowCmd = &cobra.Command{
 		if !validProtocolNamePattern.MatchString(name) {
 			return fmt.Errorf("invalid protocol name: %q (must start with letter, contain only letters, numbers, hyphens, underscores)", name)
 		}
-		path := store.ProtocolsPath(name + ".yaml")
+		path := repository.ProtocolsPath(name + ".yaml")
 		data, err := os.ReadFile(path)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -87,11 +88,11 @@ var protocolCreateCmd = &cobra.Command{
 		if !validProtocolNamePattern.MatchString(name) {
 			return fmt.Errorf("invalid protocol name: %q (must start with letter, contain only letters, numbers, hyphens, underscores)", name)
 		}
-		path := store.ProtocolsPath(name + ".yaml")
+		path := repository.ProtocolsPath(name + ".yaml")
 		if _, err := os.Stat(path); err == nil {
 			return fmt.Errorf("protocol already exists: %s", name)
 		}
-		if err := ensureDir(filepath.Dir(path)); err != nil {
+		if err := utils.EnsureDir(filepath.Dir(path)); err != nil {
 			return err
 		}
 		if err := os.WriteFile(path, []byte(assets.DefaultProtocolYAML), 0644); err != nil {

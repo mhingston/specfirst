@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"specfirst/internal/prompts"
+	"specfirst/internal/engine/system"
 )
 
 func TestDiffCommand(t *testing.T) {
@@ -22,7 +22,7 @@ func TestDiffCommand(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		prompt, err := prompts.Render("change-impact.md", prompts.DiffData{
+		prompt, err := system.Render("change-impact.md", system.DiffData{
 			SpecBefore: "# Old\n\n- Feature A",
 			SpecAfter:  "# New\n\n- Feature B",
 		})
@@ -58,7 +58,7 @@ func TestDiffCommand(t *testing.T) {
 
 func TestAssumptionsCommand(t *testing.T) {
 	t.Run("generates assumptions prompt", func(t *testing.T) {
-		prompt, err := prompts.Render("assumptions-extraction.md", prompts.SpecData{
+		prompt, err := system.Render("assumptions-extraction.md", system.SpecData{
 			Spec: "# Spec\n\n- Feature A",
 		})
 		if err != nil {
@@ -135,7 +135,7 @@ func TestReviewCommand(t *testing.T) {
 
 func TestFailureCommand(t *testing.T) {
 	t.Run("generates failure modes prompt", func(t *testing.T) {
-		prompt, err := prompts.Render("failure-modes.md", prompts.SpecData{
+		prompt, err := system.Render("failure-modes.md", system.SpecData{
 			Spec: "# Spec",
 		})
 		if err != nil {
@@ -161,7 +161,10 @@ func TestFailureCommand(t *testing.T) {
 
 func TestTestIntentCommand(t *testing.T) {
 	t.Run("generates test intent prompt", func(t *testing.T) {
-		prompt := generateTestIntentPrompt("# Spec", "test.md")
+		prompt, err := GenerateTestIntentPrompt("# Spec")
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		if !strings.Contains(prompt, "test intent") {
 			t.Error("expected prompt to contain 'test intent'")
@@ -183,7 +186,7 @@ func TestTestIntentCommand(t *testing.T) {
 
 func TestTraceCommand(t *testing.T) {
 	t.Run("generates trace prompt", func(t *testing.T) {
-		prompt, err := prompts.Render("trace.md", prompts.SpecData{
+		prompt, err := system.Render("trace.md", system.SpecData{
 			Spec:   "# Spec",
 			Source: "test.md",
 		})

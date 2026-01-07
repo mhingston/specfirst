@@ -3,10 +3,13 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"specfirst/internal/prompts"
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"specfirst/internal/engine/prompt"
+	"specfirst/internal/engine/system"
+	"specfirst/internal/repository"
 )
 
 var distillAudience string
@@ -32,19 +35,19 @@ The output is a structured prompt suitable for AI assistants or human writers.`,
 			return fmt.Errorf("reading spec %s: %w", specPath, err)
 		}
 
-		prompt, err := generateDistillPrompt(string(content), specPath, distillAudience)
+		promptStr, err := generateDistillPrompt(string(content), specPath, distillAudience)
 		if err != nil {
 			return err
 		}
 
-		prompt = applyMaxChars(prompt, stageMaxChars)
-		formatted, err := formatPrompt(stageFormat, "distill", prompt)
+		promptStr = prompt.ApplyMaxChars(promptStr, stageMaxChars)
+		formatted, err := prompt.Format(stageFormat, "distill", promptStr)
 		if err != nil {
 			return err
 		}
 
 		if stageOut != "" {
-			if err := writeOutput(stageOut, formatted); err != nil {
+			if err := repository.WriteOutput(stageOut, formatted); err != nil {
 				return err
 			}
 		}
@@ -155,7 +158,7 @@ func generateDistillPrompt(content, path, audience string) (string, error) {
 
 	// AI audience uses the gold-standard template
 	if audienceLower == "ai" {
-		return prompts.Render("ai-distillation.md", prompts.SpecData{Spec: content})
+		return system.Render("ai-distillation.md", system.SpecData{Spec: content})
 	}
 
 	audienceInstructions, ok := distillAudiences[audienceLower]

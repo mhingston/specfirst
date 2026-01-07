@@ -7,11 +7,36 @@ import (
 	"testing"
 
 	"specfirst/internal/assets"
-	"specfirst/internal/snapshot"
-	"specfirst/internal/store"
+	"specfirst/internal/domain"
+	"specfirst/internal/repository"
 
 	"github.com/spf13/cobra"
 )
+
+// testRestoreCreateParams creates a CreateParams for testing.
+func testRestoreCreateParams(t *testing.T) repository.CreateParams {
+	t.Helper()
+	cfg, err := repository.LoadConfig(repository.ConfigPath())
+	if err != nil {
+		cfg = domain.Config{Protocol: assets.DefaultProtocolName}
+	}
+	if cfg.Protocol == "" {
+		cfg.Protocol = assets.DefaultProtocolName
+	}
+	proto, err := repository.LoadProtocol(repository.ProtocolsPath(cfg.Protocol + ".yaml"))
+	if err != nil {
+		t.Fatalf("load protocol: %v", err)
+	}
+	s, err := repository.LoadState(repository.StatePath())
+	if err != nil {
+		s = domain.NewState(proto.Name)
+	}
+	return repository.CreateParams{
+		Config:   cfg,
+		Protocol: proto,
+		State:    s,
+	}
+}
 
 func TestArchiveRestoreCleansWorkspace(t *testing.T) {
 	// Setup workspace with "dirty" state (extra artifacts)
@@ -21,74 +46,53 @@ func TestArchiveRestoreCleansWorkspace(t *testing.T) {
 	os.Chdir(tmp)
 
 	// Create a "dirty" artifact that should be removed by restore
-	dirtyArtifact := store.ArtifactsPath("requirements", "dirty.md")
+	dirtyArtifact := repository.ArtifactsPath("requirements", "dirty.md")
 	os.MkdirAll(filepath.Dir(dirtyArtifact), 0755)
 	os.WriteFile(dirtyArtifact, []byte("should be gone"), 0644)
 
 	// Create valid structure for Archive
-	os.MkdirAll(store.ProtocolsPath(), 0755)
-	os.WriteFile(store.ProtocolsPath(assets.DefaultProtocolName+".yaml"), []byte(assets.DefaultProtocolYAML), 0644)
-	os.MkdirAll(store.TemplatesPath(), 0755)
-	os.WriteFile(store.TemplatesPath("requirements.md"), []byte("# Req"), 0644)
-	os.WriteFile(store.ConfigPath(), []byte("protocol: "+assets.DefaultProtocolName+"\n"), 0644)
+	os.MkdirAll(repository.ProtocolsPath(), 0755)
+	os.WriteFile(repository.ProtocolsPath(assets.DefaultProtocolName+".yaml"), []byte(assets.DefaultProtocolYAML), 0644)
+	os.MkdirAll(repository.TemplatesPath(), 0755)
+	os.WriteFile(repository.TemplatesPath("requirements.md"), []byte("# Req"), 0644)
+	os.WriteFile(repository.ConfigPath(), []byte("protocol: "+assets.DefaultProtocolName+"\n"), 0644)
 
 	// Create Clean State
 	cleanStateJSON := `{"completed_stages": []}`
-	os.WriteFile(store.StatePath(), []byte(cleanStateJSON), 0644)
+	os.WriteFile(repository.StatePath(), []byte(cleanStateJSON), 0644)
 
 	// Create snapshot manager
-	mgr := snapshot.NewManager(store.ArchivesPath())
+	mgr := repository.NewSnapshotRepository(repository.ArchivesPath())
+	params := testRestoreCreateParams(t)
 
-	// Create Archive "clean-v1" (Snapshot of this state, but WITHOUT the dirty artifact in state, so createArchive won't include it?)
-	// update: createArchive only includes artifacts referenced in state.json.
-	// The `dirty.md` is NOT in state.json, so it won't be in the archive.
-	// But it IS on disk.
-	// So `createArchive` will make an archive that *doesn't* have `dirty.md`.
-
-	err := mgr.Create("clean-v1", nil, "")
+	// Create Archive "clean-v1"
+	err := mgr.Create("clean-v1", nil, "", params)
 	if err != nil {
 		t.Fatalf("createArchive failed: %v", err)
 	}
 
 	// Verify archive exists
-	if _, err := os.Stat(store.ArchivesPath("clean-v1")); err != nil {
+	if _, err := os.Stat(repository.ArchivesPath("clean-v1")); err != nil {
 		t.Fatalf("archive not created")
 	}
 
 	// Now, create another file "new_dirty.md" just to be sure we are modifying workspace
-	os.WriteFile(store.ArtifactsPath("requirements", "new_dirty.md"), []byte("garbage"), 0644)
+	os.WriteFile(repository.ArtifactsPath("requirements", "new_dirty.md"), []byte("garbage"), 0644)
 
-	// Restore "clean-v1"
-	// With the FIX, this should replace the entire `artifacts` directory with the one from the archive.
-	// Since the archive has NO artifacts (or just empty dirs?), the restored `artifacts` dir should not contain `new_dirty.md`.
-	// Wait, `createArchive` copies `store.ArtifactsPath()` (entire dir).
-	// So `dirty.md` WAS included in the archive because `createArchive` copies the whole directory:
-	// `copyDir(store.ArtifactsPath(), filepath.Join(tmpArchiveRoot, "artifacts"))`
-
-	// Ah! `createArchive` DOES validate referenced artifacts, but the actual copy is `copyDir` of the root.
-	// So `dirty.md` (untracked) IS in the archive.
-	// This means my test setup is flawed. I need to make an archive that definitely DOESN'T have the file.
-
-	// Correct Approach:
-	// 1. Clean workspace (no dirty files).
-	// 2. Create Archive "clean".
-	// 3. Add dirty file to workspace.
-	// 4. Restore "clean" -> Dirty file should be gone.
-
-	// Reset
-	os.RemoveAll(store.ArtifactsPath())
-	// Create minimal valid artifact structure (maybe empty?)
-	os.MkdirAll(store.ArtifactsPath(), 0755)
+	// Reset for clean-v2
+	os.RemoveAll(repository.ArtifactsPath())
+	os.MkdirAll(repository.ArtifactsPath(), 0755)
 
 	// Create clean archive
-	err = mgr.Create("clean-v2", nil, "")
+	params = testRestoreCreateParams(t)
+	err = mgr.Create("clean-v2", nil, "", params)
 	if err != nil {
 		t.Fatalf("createArchive v2 failed: %v", err)
 	}
 
 	// Create dirty file
-	os.MkdirAll(store.ArtifactsPath("requirements"), 0755)
-	dirtyPath := store.ArtifactsPath("requirements", "dirty.md")
+	os.MkdirAll(repository.ArtifactsPath("requirements"), 0755)
+	dirtyPath := repository.ArtifactsPath("requirements", "dirty.md")
 	os.WriteFile(dirtyPath, []byte("trash"), 0644)
 
 	// Restore "clean-v2" --force
@@ -97,6 +101,21 @@ func TestArchiveRestoreCleansWorkspace(t *testing.T) {
 	cmd.SetErr(io.Discard)
 	cmd.Flags().Bool("force", false, "")
 	cmd.Flags().Set("force", "true")
+
+	// We can't call archiveRestoreCmd.RunE directly because it depends on args/flags parsing that cobra does.
+	// But `archiveRestoreCmd` logic invokes `repository.Restore`.
+	// Ideally we unit test `repository.Restore` directly in repository package tests.
+	// BUT `archive_restore_test` is an integration test for the cmd.
+	// The problem is `archiveRestoreCmd` in `archive.go` does:
+	// 	mgr := repository.NewSnapshotRepository(repository.ArchivesPath())
+	// 	if err := mgr.Restore(version, force); err != nil { ... }
+	// So we can re-implement the call locally to test the logic if we want, OR invoke the command.
+
+	// The original test invoked `archiveRestoreCmd.RunE`.
+	// We need to make sure `archive.go` has `archiveRestoreCmd` exported or accessible. It is local var?
+	// `var archiveRestoreCmd = ...` in `archive.go`.
+	// Yes, `archiveRestoreCmd` is package level variable in `cmd`.
+	// So we can use it.
 
 	err = archiveRestoreCmd.RunE(cmd, []string{"clean-v2"})
 	if err != nil {

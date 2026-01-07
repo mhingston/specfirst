@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"specfirst/internal/state"
+	"specfirst/internal/repository"
 
 	"github.com/spf13/cobra"
 )
@@ -27,12 +27,13 @@ var assumeAddCmd = &cobra.Command{
 	Short: "Add a new assumption",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
 		id := s.AddAssumption(args[0], epistemicOwner)
-		if err := state.Save(".specfirst/state.json", s); err != nil {
+		if err := repository.SaveState(path, s); err != nil {
 			return err
 		}
 		fmt.Printf("Added assumption %s\n", id)
@@ -44,7 +45,8 @@ var assumeListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List assumptions",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -67,7 +69,8 @@ var questionAddCmd = &cobra.Command{
 	Short: "Add a new open question",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -76,7 +79,7 @@ var questionAddCmd = &cobra.Command{
 			tags = strings.Split(epistemicTags, ",")
 		}
 		id := s.AddOpenQuestion(args[0], tags, epistemicContext)
-		if err := state.Save(".specfirst/state.json", s); err != nil {
+		if err := repository.SaveState(path, s); err != nil {
 			return err
 		}
 		fmt.Printf("Added question %s\n", id)
@@ -88,7 +91,8 @@ var questionListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List open questions",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -111,13 +115,14 @@ var decisionAddCmd = &cobra.Command{
 	Short: "Record a decision",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
 		// In a real implementation we might want flags for rationale/alternatives
 		id := s.AddDecision(args[0], "No rationale provided via CLI yet", nil)
-		if err := state.Save(".specfirst/state.json", s); err != nil {
+		if err := repository.SaveState(path, s); err != nil {
 			return err
 		}
 		fmt.Printf("Recorded decision %s\n", id)
@@ -137,7 +142,8 @@ var riskAddCmd = &cobra.Command{
 	Short: "Add a risk",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -146,7 +152,7 @@ var riskAddCmd = &cobra.Command{
 			severity = args[1]
 		}
 		id := s.AddRisk(args[0], severity)
-		if err := state.Save(".specfirst/state.json", s); err != nil {
+		if err := repository.SaveState(path, s); err != nil {
 			return err
 		}
 		fmt.Printf("Added risk %s\n", id)
@@ -165,12 +171,13 @@ var disputeAddCmd = &cobra.Command{
 	Short: "Log a dispute",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
 		id := s.AddDispute(args[0])
-		if err := state.Save(".specfirst/state.json", s); err != nil {
+		if err := repository.SaveState(path, s); err != nil {
 			return err
 		}
 		fmt.Printf("Logged dispute %s\n", id)
@@ -214,7 +221,8 @@ var assumeCloseCmd = &cobra.Command{
 	Short: "Close an assumption",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -225,7 +233,7 @@ var assumeCloseCmd = &cobra.Command{
 		if !s.CloseAssumption(args[0], status) {
 			return fmt.Errorf("assumption %s not found", args[0])
 		}
-		return state.Save(".specfirst/state.json", s)
+		return repository.SaveState(path, s)
 	},
 }
 
@@ -234,7 +242,8 @@ var questionResolveCmd = &cobra.Command{
 	Short: "Resolve an open question",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -245,7 +254,7 @@ var questionResolveCmd = &cobra.Command{
 		if !s.ResolveOpenQuestion(args[0], answer) {
 			return fmt.Errorf("question %s not found", args[0])
 		}
-		return state.Save(".specfirst/state.json", s)
+		return repository.SaveState(path, s)
 	},
 }
 
@@ -254,7 +263,8 @@ var decisionUpdateCmd = &cobra.Command{
 	Short: "Update decision status",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -265,7 +275,7 @@ var decisionUpdateCmd = &cobra.Command{
 		if !s.UpdateDecision(args[0], status) {
 			return fmt.Errorf("decision %s not found", args[0])
 		}
-		return state.Save(".specfirst/state.json", s)
+		return repository.SaveState(path, s)
 	},
 }
 
@@ -274,7 +284,8 @@ var riskMitigateCmd = &cobra.Command{
 	Short: "Mitigate a risk",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
@@ -289,7 +300,7 @@ var riskMitigateCmd = &cobra.Command{
 		if !s.MitigateRisk(args[0], mitigation, status) {
 			return fmt.Errorf("risk %s not found", args[0])
 		}
-		return state.Save(".specfirst/state.json", s)
+		return repository.SaveState(path, s)
 	},
 }
 
@@ -298,14 +309,15 @@ var disputeResolveCmd = &cobra.Command{
 	Short: "Resolve a dispute",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := state.Load(".specfirst/state.json")
+		path := repository.StatePath()
+		s, err := repository.LoadState(path)
 		if err != nil {
 			return err
 		}
 		if !s.ResolveDispute(args[0]) {
 			return fmt.Errorf("dispute %s not found", args[0])
 		}
-		return state.Save(".specfirst/state.json", s)
+		return repository.SaveState(path, s)
 	},
 }
 

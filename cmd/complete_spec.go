@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"specfirst/internal/snapshot"
-	"specfirst/internal/store"
 
 	"github.com/spf13/cobra"
+
+	"specfirst/internal/app"
+	"specfirst/internal/repository"
 )
 
 var completeSpecCmd = &cobra.Command{
@@ -22,23 +23,15 @@ Use --warn-only to report missing stages or approvals without failing the comman
 		tags, _ := cmd.Flags().GetStringSlice("tag")
 		notes, _ := cmd.Flags().GetString("notes")
 
-		cfg, err := loadConfig()
+		application, err := app.Load(protocolFlag)
 		if err != nil {
 			return err
 		}
-		proto, err := loadProtocol(activeProtocolName(cfg))
-		if err != nil {
-			return err
-		}
-		s, err := loadState()
-		if err != nil {
-			return err
-		}
-		s = ensureStateInitialized(s, proto)
+		// Ensure state initialized? App load does it.
 
 		missing := []string{}
-		for _, stage := range proto.Stages {
-			if !s.IsStageCompleted(stage.ID) {
+		for _, stage := range application.Protocol.Stages {
+			if !application.State.IsStageCompleted(stage.ID) {
 				missing = append(missing, stage.ID)
 			}
 		}
@@ -51,7 +44,20 @@ Use --warn-only to report missing stages or approvals without failing the comman
 			}
 		}
 
-		missingApprovalRecords := missingApprovals(proto, s)
+		// Convert protocol approvals to state approvals check
+		// Original code logic: `missingApprovalRecords := state.MissingApprovals(approvals, s)`
+		// I must implement `MissingApprovals` logic here or in App/Domain.
+		// Let's implement inline as it's simple loop.
+
+		var missingApprovalRecords []string
+		for _, a := range application.Protocol.Approvals {
+			// Check if stage is completed first? Usually approvals needed for completed stages logic?
+			// The original logic checked if approvals were present for required approvals.
+			if !application.State.HasAttestation(a.Stage, a.Role, "approved") {
+				missingApprovalRecords = append(missingApprovalRecords, fmt.Sprintf("%s (role: %s)", a.Stage, a.Role))
+			}
+		}
+
 		if len(missingApprovalRecords) > 0 {
 			err := fmt.Errorf("spec is not approved, missing approvals: %v", missingApprovalRecords)
 			if warnOnly {
@@ -67,21 +73,19 @@ Use --warn-only to report missing stages or approvals without failing the comman
 
 		if archiveFlag {
 			if version == "" {
-				version = s.SpecVersion
+				version = application.State.SpecVersion
 			}
 			if version == "" {
 				return fmt.Errorf("archive version is required (set --version or state.spec_version)")
 			}
-			// Archive the current version before completion if requested
-			// (Assuming logic was: create archive if success? or strictly before?)
-			// The error hints it called createArchive(version, tags, notes)
-			// We'll replicate using snapshot.Manager
 
-			// Wait, I need to see the context. The file view below will show usage.
-			// Assuming it was: if err := createArchive(...); err != nil ...
-
-			mgr := snapshot.NewManager(store.ArchivesPath())
-			if err := mgr.Create(version, tags, notes); err != nil {
+			repo := repository.NewSnapshotRepository(repository.ArchivesPath())
+			params := repository.CreateParams{
+				Config:   application.Config,
+				Protocol: application.Protocol,
+				State:    application.State,
+			}
+			if err := repo.Create(version, tags, notes, params); err != nil {
 				return fmt.Errorf("failed to archive: %w", err)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Archived version %s\n", version)

@@ -33,7 +33,7 @@ When you run `specfirst archive`, the system captures more than just a snapshot 
 SpecFirst distinguishes between temporary files (debris) and meaningful records (artifacts). Archives focus on preserving the path taken to reach the result, ensuring that "restoring" an archive brings back the full context of the decision-making process, not just the final bytes.
 
 **Tracks (Parallel Futures):**
-Tracks extend the archive philosophy to support branching futures. A "track" is simply a named snapshot that lives in `.specfirst/tracks` instead of `.specfirst/archives`. Usage the `internal/snapshot` engine, tracks allow you to save your current state, experiment in a different direction, and then `restore` (switch) between them.
+Tracks extend the archive philosophy to support branching futures. A "track" is simply a named snapshot that lives in `.specfirst/tracks` instead of `.specfirst/archives`. Tracks allow you to save your current state, experiment in a different direction, and then `restore` (switch) between them.
 
 ## Restore Semantics
 *   **Restore** means recreating the exact state of a project at a specific point in time.
@@ -41,29 +41,75 @@ Tracks extend the archive philosophy to support branching futures. A "track" is 
 *   The `state.json` is restored alongside the workspace to allow the user to resume the workflow exactly where it left off.
 
 ## Codebase Architecture
-The SpecFirst CLI implementation follows a **Layered Architecture** to separate concerns and ensure maintainability:
+The SpecFirst CLI implementation follows a **Clean Layered Architecture** to separate concerns, enforce dependencies, and ensure maintainability:
 
-### 1. Command Layer (`cmd/`)
+```mermaid
+graph TD
+    CMD[cmd] --> APP[internal/app]
+    APP --> DOM[internal/domain]
+    APP --> REP[internal/repository]
+    APP --> ENG[internal/engine]
+    REP --> DOM
+    ENG --> DOM
+    REP --> UTILS[internal/utils]
+```
+
+### 1. Presentation Layer (`cmd/`)
 The entry point for user interaction. Commands are thin wrappers that:
 -   Parse CLI flags and arguments.
--   Initialize the `Engine`.
--   Delegate core logic to the `Engine`.
+-   Initialize the `Application` coordinator via `app.Load()`.
+-   Delegate use-case execution to `internal/app`.
 -   Print results (success messages or warnings).
 
-### 2. Application Core (`internal/engine/`)
-The heart of the application logic. The `Engine`:
--   Orchestrates the workflow.
--   Manages `State`, `Config`, and `Protocol` loading/saving.
--   Validates transitions and logic (e.g., `Check`, `CompleteStage`).
--   Prevents illegal operations.
+### 2. Application Layer (`internal/app/`)
+The **Coordinator**. This layer implements the primary use cases and workflows of the system.
+-   **Orchestration**: Manages the flow data between repositories, engine, and domain logic.
+-   **Use Cases**: `InitializeWorkspace`, `CompleteStage`, `CompilePrompt`, `Check`, `AttestStage`.
+-   It does **not** contain low-level I/O logic (Repository) or core business rules independent of workflow (Domain).
 
-### 3. Domain Primitives (`internal/protocol`, `internal/state`, `internal/task`)
-Pure data structures and validation logic for the core concepts of SpecFirst. These packages have minimal dependencies.
+**Key Files:**
+-   `app.go` - `Application` struct holding references to state and config.
+-   `complete.go`, `init.go`, `task.go` - Specific workflow implementations.
 
-### 4. Infrastructure & Utilities (`internal/workspace`, `internal/store`, `internal/prompt`, `internal/template`, `internal/snapshot`)
-Low-level services that handle technical details:
--   **`workspace`**: File system operations, artifact resolution, hashing, and atomic writes.
--   **`store`**: Path management for standard directories (`.specfirst/`).
--   **`template`**: Text processing and rendering.
--   **`snapshot`**: Core logic for archiving, tracking, restoring, and comparing workspace states.
+### 3. Domain Layer (`internal/domain/`)
+The **Core**. Pure business logic and entities. This layer has **zero external dependencies** (except stdlib).
+-   **Entities**: `Protocol`, `Stage`, `Task`, `State`, `Config`.
+-   **Logic**: State transitions, validation rules, task parsing.
 
+**Key Files:**
+-   `protocol.go`, `state.go`, `task.go`, `config.go`.
+
+### 4. Repository Layer (`internal/repository/`)
+The **Persistence & I/O** layer. Handles all interactions with the filesystem and storage.
+-   **Persistence**: Loading/Saving `State`, `Config`, `Protocol`.
+-   **Artifacts**: Managing `.specfirst/` directory structure, resolving paths.
+-   **Snapshots**: Archives and Tracks logic.
+
+**Key Files:**
+-   `state_repo.go`, `config_repo.go`, `protocol_repo.go`.
+-   `snapshot_repo.go`.
+
+### 5. Engine Layer (`internal/engine/`)
+The **Mechanics**. Specialized subsystems for processing text and prompts.
+-   **Templating**: Processing `text/template` files (`templating/`).
+-   **Prompts**: Schema validation, ambiguity detection, and formatting (`prompt/`).
+-   **System**: Loading embedded system prompts (`system/`).
+
+## Dependency Graph
+
+```
+cmd/
+ └── internal/app/             ← Orchestration
+      ├── internal/domain/     ← Entities
+      ├── internal/repository/ ← I/O & Persistence
+      └── internal/engine/     ← Mechanics
+```
+
+This hierarchy is strictly enforced. `domain` never imports `app` or `repository`. `repository` never imports `app`.
+
+## Recent Refactoring (Jan 2026)
+
+- **Layered Architecture**: Migrated from a flat/mixed `internal` structure to strict layers (`app`, `domain`, `repository`, `engine`).
+- **`internal/workspace` Dissolved**: Functionalities moved to `internal/repository` (paths) and `internal/utils` (fs/hashing).
+- **`internal/store` Removed**: Merged into `internal/repository`.
+- **`cmd` Thinning**: All logic moved to `internal/app`, leaving `cmd` as a pure interface layer.

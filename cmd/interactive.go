@@ -1,6 +1,12 @@
 package cmd
 
-import "specfirst/internal/assets"
+import (
+	"specfirst/internal/app"
+	"specfirst/internal/assets"
+	"specfirst/internal/engine/prompt"
+	"specfirst/internal/engine/templating"
+	"specfirst/internal/repository"
+)
 
 type interactiveData struct {
 	ProjectName  string
@@ -20,17 +26,13 @@ type stageSummary struct {
 }
 
 func runInteractive(cmdOut interface{ Write([]byte) (int, error) }) error {
-	cfg, err := loadConfig()
-	if err != nil {
-		return err
-	}
-	proto, err := loadProtocol(activeProtocolName(cfg))
+	application, err := app.Load(protocolFlag)
 	if err != nil {
 		return err
 	}
 
-	stages := make([]stageSummary, 0, len(proto.Stages))
-	for _, stage := range proto.Stages {
+	stages := make([]stageSummary, 0, len(application.Protocol.Stages))
+	for _, stage := range application.Protocol.Stages {
 		stages = append(stages, stageSummary{
 			ID:      stage.ID,
 			Name:    stage.Name,
@@ -40,28 +42,28 @@ func runInteractive(cmdOut interface{ Write([]byte) (int, error) }) error {
 	}
 
 	data := interactiveData{
-		ProjectName:  cfg.ProjectName,
-		ProtocolName: proto.Name,
+		ProjectName:  application.Config.ProjectName,
+		ProtocolName: application.Protocol.Name,
 		Stages:       stages,
-		Language:     cfg.Language,
-		Framework:    cfg.Framework,
-		CustomVars:   cfg.CustomVars,
-		Constraints:  cfg.Constraints,
+		Language:     application.Config.Language,
+		Framework:    application.Config.Framework,
+		CustomVars:   application.Config.CustomVars,
+		Constraints:  application.Config.Constraints,
 	}
 
-	prompt, err := renderInlineTemplate(assets.InteractiveTemplate, data)
+	promptStr, err := templating.RenderInline(assets.InteractiveTemplate, data)
 	if err != nil {
 		return err
 	}
 
-	prompt = applyMaxChars(prompt, stageMaxChars)
-	formatted, err := formatPrompt(stageFormat, "interactive", prompt)
+	promptStr = prompt.ApplyMaxChars(promptStr, stageMaxChars)
+	formatted, err := prompt.Format(stageFormat, "interactive", promptStr)
 	if err != nil {
 		return err
 	}
 
 	if stageOut != "" {
-		if err := writeOutput(stageOut, formatted); err != nil {
+		if err := repository.WriteOutput(stageOut, formatted); err != nil {
 			return err
 		}
 	}

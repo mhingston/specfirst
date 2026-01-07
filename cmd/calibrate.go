@@ -6,7 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"specfirst/internal/prompts"
+	"specfirst/internal/engine/prompt"
+	"specfirst/internal/engine/system"
+	"specfirst/internal/repository"
 )
 
 var calibrateCmd = &cobra.Command{
@@ -30,21 +32,21 @@ The output is a structured prompt suitable for AI assistants or human reviewers.
 			return fmt.Errorf("reading artifact %s: %w", artifactPath, err)
 		}
 
-		prompt, err := prompts.Render("epistemic-calibration.md", prompts.SpecData{
+		promptStr, err := system.Render("epistemic-calibration.md", system.SpecData{
 			Spec: string(content),
 		})
 		if err != nil {
 			return fmt.Errorf("rendering calibrate prompt: %w", err)
 		}
 
-		prompt = applyMaxChars(prompt, stageMaxChars)
-		formatted, err := formatPrompt(stageFormat, "calibrate", prompt)
+		promptStr = prompt.ApplyMaxChars(promptStr, stageMaxChars)
+		formatted, err := prompt.Format(stageFormat, "calibrate", promptStr)
 		if err != nil {
 			return err
 		}
 
 		if stageOut != "" {
-			if err := writeOutput(stageOut, formatted); err != nil {
+			if err := repository.WriteOutput(stageOut, formatted); err != nil {
 				return err
 			}
 		}

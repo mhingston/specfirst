@@ -6,7 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"specfirst/internal/prompts"
+	"specfirst/internal/engine/prompt"
+	"specfirst/internal/engine/system"
+	"specfirst/internal/repository"
 )
 
 var diffCmd = &cobra.Command{
@@ -33,7 +35,7 @@ The output is a structured prompt suitable for AI assistants or human reviewers.
 			return fmt.Errorf("reading new spec %s: %w", newPath, err)
 		}
 
-		prompt, err := prompts.Render("change-impact.md", prompts.DiffData{
+		promptStr, err := system.Render("change-impact.md", system.DiffData{
 			SpecBefore: string(oldContent),
 			SpecAfter:  string(newContent),
 		})
@@ -41,14 +43,14 @@ The output is a structured prompt suitable for AI assistants or human reviewers.
 			return fmt.Errorf("rendering diff prompt: %w", err)
 		}
 
-		prompt = applyMaxChars(prompt, stageMaxChars)
-		formatted, err := formatPrompt(stageFormat, "diff", prompt)
+		promptStr = prompt.ApplyMaxChars(promptStr, stageMaxChars)
+		formatted, err := prompt.Format(stageFormat, "diff", promptStr)
 		if err != nil {
 			return err
 		}
 
 		if stageOut != "" {
-			if err := writeOutput(stageOut, formatted); err != nil {
+			if err := repository.WriteOutput(stageOut, formatted); err != nil {
 				return err
 			}
 		}

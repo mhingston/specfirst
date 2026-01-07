@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"specfirst/internal/engine"
+	"specfirst/internal/app"
 
 	"github.com/spf13/cobra"
 )
@@ -33,12 +33,12 @@ var attestCmd = &cobra.Command{
 			attestedBy = os.Getenv("USERNAME")
 		}
 
-		eng, err := engine.Load(protocolFlag)
+		application, err := app.Load(protocolFlag)
 		if err != nil {
 			return err
 		}
 
-		warnings, err := eng.AttestStage(stageID, role, attestedBy, status, notes, conditions)
+		warnings, err := application.AttestStage(stageID, role, attestedBy, status, notes, conditions)
 		if err != nil {
 			return err
 		}

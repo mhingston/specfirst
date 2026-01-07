@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
-	"io"
-	"specfirst/internal/engine"
-	"specfirst/internal/protocol"
-	"strings"
+	"specfirst/internal/app"
+	"specfirst/internal/repository"
 )
 
 var completeForce bool
@@ -22,8 +22,8 @@ var completeCmd = &cobra.Command{
 		stageID := args[0]
 		var outputFiles []string
 
-		// Load Engine
-		eng, err := engine.Load(protocolFlag)
+		// Load App
+		application, err := app.Load(protocolFlag)
 		if err != nil {
 			return err
 		}
@@ -33,8 +33,7 @@ var completeCmd = &cobra.Command{
 			outputFiles = make([]string, len(args[1:]))
 			copy(outputFiles, args[1:])
 			// First pass: identify stdin and map to target filenames
-			// Note: We need stage info to do wildcard expansion if stdin used with "-"
-			stage, ok := eng.Protocol.StageByID(stageID)
+			stage, ok := application.Protocol.StageByID(stageID)
 			if !ok {
 				return fmt.Errorf("unknown stage: %s", stageID)
 			}
@@ -62,13 +61,13 @@ var completeCmd = &cobra.Command{
 			}
 		} else {
 			// Auto-discovery requires stage info
-			stage, ok := eng.Protocol.StageByID(stageID)
+			stage, ok := application.Protocol.StageByID(stageID)
 			if !ok {
 				return fmt.Errorf("unknown stage: %s", stageID)
 			}
 
 			// Auto-discover changed files
-			discovered, err := discoverChangedFiles() // Legacy helper for now, or move to workspace?
+			discovered, err := repository.DiscoverChangedFiles()
 			if err != nil {
 				return err
 			}
@@ -80,7 +79,7 @@ var completeCmd = &cobra.Command{
 			if len(stage.Outputs) > 0 {
 				filtered := make([]string, 0, len(discovered))
 				for _, file := range discovered {
-					rel, err := outputRelPath(file) // Legacy helper
+					rel, err := repository.ProjectRelPath(file)
 					if err != nil {
 						continue // Skip invalid paths
 					}
@@ -104,7 +103,7 @@ var completeCmd = &cobra.Command{
 			for i, arg := range args[1:] {
 				if arg == "-" || strings.HasSuffix(arg, "=-") {
 					target := outputFiles[i]
-					resolved, err := resolveOutputPath(target) // Legacy helper
+					resolved, err := repository.ResolveOutputPath(target)
 					if err != nil {
 						return err
 					}
@@ -115,8 +114,8 @@ var completeCmd = &cobra.Command{
 			}
 		}
 
-		// Delegate to Engine
-		if err := eng.CompleteStage(stageID, outputFiles, completeForce, promptFile); err != nil {
+		// Delegate to App
+		if err := application.CompleteStage(stageID, outputFiles, completeForce, promptFile); err != nil {
 			return err
 		}
 
@@ -130,43 +129,9 @@ func init() {
 	completeCmd.Flags().BoolVar(&completeForce, "force", false, "force overwrite of existing stage completion")
 }
 
-func validateOutputs(stage protocol.Stage, outputFiles []string) error {
-	if len(stage.Outputs) == 0 {
-		return nil
-	}
-	relOutputs := make([]string, 0, len(outputFiles))
-	for _, output := range outputFiles {
-		rel, err := outputRelPath(output)
-		if err != nil {
-			return err
-		}
-		relOutputs = append(relOutputs, rel)
-	}
-	missing := []string{}
-	for _, expected := range stage.Outputs {
-		if expected == "" {
-			continue
-		}
-		found := false
-		for _, output := range relOutputs {
-			if matchOutputPattern(expected, output) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			missing = append(missing, expected)
-		}
-	}
-	if len(missing) > 0 {
-		return fmt.Errorf("missing expected outputs: %v", missing)
-	}
-	return nil
-}
-
 func isOutputMatch(patterns []string, file string) bool {
 	for _, pattern := range patterns {
-		if matchOutputPattern(pattern, file) {
+		if repository.MatchOutputPattern(pattern, file) {
 			return true
 		}
 	}

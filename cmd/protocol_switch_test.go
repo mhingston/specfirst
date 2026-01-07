@@ -8,8 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"specfirst/internal/app"
 	"specfirst/internal/assets"
-	"specfirst/internal/store"
+	"specfirst/internal/repository"
 )
 
 // captureOutput captures stdout from a function call
@@ -56,6 +57,15 @@ stages:
     template: custom.md
     outputs: [custom.md]
 `
+	// Typically protocol path needs to be valid. If it's just a file name it looks in .specfirst/protocols.
+	// If it is absolute/relative path, it loads directly?
+	// app.Load calls repository.LoadProtocol.
+	// repository.LoadProtocol calls repository.ProtocolsPath(name) if it doesn't end in yaml/yml?
+	// If we pass an absolute path to protocol flag, app.Load uses it as is?
+	// Let's assume app.Load logic:
+	// if protocolOverride != "" -> load that.
+
+	// Create the file.
 	customProtoPath := filepath.Join(tmpDir, "custom-protocol.yaml")
 	if err := os.WriteFile(customProtoPath, []byte(customProtoContent), 0644); err != nil {
 		t.Fatal(err)
@@ -68,53 +78,45 @@ stages:
 	}
 
 	t.Run("overrides default protocol with file path", func(t *testing.T) {
-		// We can't really execute 'custom' stage because runStage prints to stdout and doesn't return the prompt string easily for inspection without a buffer.
-		// Instead, we can misuse 'protocol' command to list stages, which will verify the protocol loaded.
+		// Set the flag variable directly for unit testing app.Load interactions
+		protocolFlag = customProtoPath
 
-		// Reset flags
-		protocolFlag = ""
+		// Load App
+		application, err := app.Load(protocolFlag)
+		if err != nil {
+			t.Fatalf("app.Load failed: %v", err)
+		}
 
-		// Run protocol command with override
-		// We capture stdout to verify
-		output := captureOutput(t, func() {
-			rootCmd.SetArgs([]string{"protocol", "list", "--protocol", customProtoContent}) // wait, valid arg is the path
-			// Cobra flags persistence is tricky in tests if not careful.
-			// Let's call loadConfig/loadProtocol directly to test the helper logic first?
-			// But we updated loadConfig to use global protocolFlag variable.
+		// Verify Protocol Name
+		if application.Protocol.Name != "custom-proto" {
+			t.Errorf("expected protocol name 'custom-proto', got %q", application.Protocol.Name)
+		}
 
-			// Set the flag variable directly for unit testing loadConfig/loadProtocol interactions
-			protocolFlag = customProtoPath
+		// Verify Config Protocol is NOT changed (it loads from config.yaml, override only affects memory)
+		// app.Load returns *Application which has Config.
+		// The Config struct itself will still have whatever was in config.yaml?
+		// app.Load loads config first. Then if override, it loads protocol from override.
+		// It does NOT overwrite Config.Protocol in file.
+		// Checking application.Config.Protocol might return the file value?
+		// Let's check app.go implementation.
+		// app.Load:
+		//   cfg = LoadConfig()
+		//   protoName = cfg.Protocol
+		//   if override != "" { protoName = override }
+		//   proto = LoadProtocol(protoName)
+		// It doesn't modify cfg.Protocol.
 
-			cfg, err := loadConfig()
-			if err != nil {
-				t.Fatalf("loadConfig failed: %v", err)
-			}
-			// loadConfig should NOT override the protocol
-			if cfg.Protocol == customProtoPath {
-				t.Errorf("expected config protocol to remain default, but got %q", cfg.Protocol)
-			}
-			// activeProtocolName should return the override
-			active := activeProtocolName(cfg)
-			if active != customProtoPath {
-				t.Errorf("expected active protocol to be %q, got %q", customProtoPath, active)
-			}
-
-			proto, err := loadProtocol(active)
-			if err != nil {
-				t.Fatalf("loadProtocol failed: %v", err)
-			}
-			if proto.Name != "custom-proto" {
-				t.Errorf("expected protocol name 'custom-proto', got %q", proto.Name)
-			}
-		})
-		_ = output
+		// So checking application.Config.Protocol works.
+		if application.Config.Protocol == customProtoPath {
+			t.Errorf("expected config protocol to remain default, but got %q", application.Config.Protocol)
+		}
 	})
 
 	t.Run("check command detects drift when overriding", func(t *testing.T) {
 		// Initialize state with default protocol
 		s := assets.DefaultProtocolName // "multi-stage"
 		// Write state file forcing it to default protocol
-		statePath := store.StatePath()
+		statePath := repository.StatePath()
 		stateContent := fmt.Sprintf(`{"protocol": "%s", "spec_version": "1.0"}`, s)
 		if err := os.WriteFile(statePath, []byte(stateContent), 0644); err != nil {
 			t.Fatal(err)
@@ -123,17 +125,22 @@ stages:
 		// Set flag to custom proto
 		protocolFlag = customProtoPath
 
-		// We want to verify that check warns about drift.
-		// We'll call checkCmd.RunE essentially, or just verify helpers logic.
-		// Since we modified loadConfig globally, any command dealing with state checking will see the mismatch.
+		// Load App
+		application, err := app.Load(protocolFlag)
+		if err != nil {
+			t.Fatalf("app.Load failed: %v", err)
+		}
 
-		cfg, _ := loadConfig()
-		proto, _ := loadProtocol(activeProtocolName(cfg)) // Loads custom-proto
-
-		if proto.Name != "custom-proto" {
+		if application.Protocol.Name != "custom-proto" {
 			t.Fatal("failed to load custom proto")
 		}
 
-		// This confirms the plumbing works. The actual warning logic is in 'check.go' which compares cfg.Protocol (now custom) vs state.Protocol (multi-stage).
+		// Logic to detect drift is usually: application.Protocol.Name != application.State.Protocol?
+		// application.State.Protocol is what we wrote to state.json ("multi-stage").
+		// application.Protocol.Name is "custom-proto".
+
+		if application.State.Protocol == application.Protocol.Name {
+			t.Fatalf("Expected protocol name mismatch (drift), but they matched: %s", application.Protocol.Name)
+		}
 	})
 }
