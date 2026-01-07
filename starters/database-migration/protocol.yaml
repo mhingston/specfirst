@@ -6,14 +6,14 @@ stages:
     name: Migration Requirements
     type: spec
     intent: exploration
-    template: templates/requirements.md
+    template: requirements.md
     outputs: [requirements.md]
     
   - id: migration-plan
     name: Migration Plan
     type: spec
     intent: planning
-    template: templates/migration-plan.md
+    template: migration-plan.md
     depends_on: [requirements]
     inputs: [requirements.md]
     outputs: [migration-plan.md]
@@ -22,7 +22,7 @@ stages:
     name: Rollback Strategy
     type: spec
     intent: planning
-    template: templates/rollback-plan.md
+    template: rollback-plan.md
     depends_on: [migration-plan]
     inputs: [migration-plan.md]
     outputs: [rollback-plan.md]
@@ -31,7 +31,7 @@ stages:
     name: Execute Migration
     type: spec
     intent: execution
-    template: templates/execute.md
+    template: execute.md
     depends_on: [migration-plan, rollback-plan]
     inputs: [migration-plan.md, rollback-plan.md]
     outputs: []
