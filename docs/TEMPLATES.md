@@ -61,7 +61,7 @@ Templates have access to these helper functions:
 | Function | Usage | Description |
 | --- | --- | --- |
 | `join` | `{{ join .Outputs ", " }}` | Joins a slice of strings with a delimiter |
-| `readFile` | `{{ readFile "skill.md" }}` | Includes a file from `.specfirst/skills/` |
+| `readFile` | `{{ readFile "design-principles.md" }}` | Includes a file from `.specfirst/skills/` (preferred) or the project root |
 
 ## Skills (Reusable Prompt Chunks)
 
@@ -79,7 +79,7 @@ Skills are reusable markdown files stored in `.specfirst/skills/`. They help sha
 Design the user interface...
 ```
 
-This includes the content of `.specfirst/skills/design-principles.md` directly in the rendered prompt.
+This includes the content of `.specfirst/skills/design-principles.md` directly in the rendered prompt (skills are searched first).
 
 ### Creating Skills
 
@@ -87,7 +87,7 @@ Create any `.md` file in `.specfirst/skills/` and reference it via `{{ readFile 
 
 See the [product-design example](../starters/product-design/) for a working demonstration of skills.
 
-**Security Note**: The `readFile` function only reads from `.specfirst/skills/` and rejects paths containing `..` or absolute paths.
+**Security Note**: The `readFile` function rejects absolute paths and path traversal (e.g. `..`). It searches `.specfirst/skills/<path>` first, then `<path>` relative to the project root.
 
 ## Example Template
 

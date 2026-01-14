@@ -1,0 +1,111 @@
+name: "brownfield-map"
+description: "Generate durable codebase docs (stack, architecture, conventions) for existing projects."
+version: "1"
+
+stages:
+  - id: map-stack
+    name: Stack Survey
+    type: spec
+    intent: exploration
+    template: stack.md
+    outputs:
+      - planning/codebase/STACK.md
+
+  - id: map-structure
+    name: Repo Structure
+    type: spec
+    intent: exploration
+    template: structure.md
+    depends_on: [map-stack]
+    inputs:
+      - planning/codebase/STACK.md
+    outputs:
+      - planning/codebase/STRUCTURE.md
+
+  - id: map-architecture
+    name: Architecture Map
+    type: spec
+    intent: exploration
+    template: architecture.md
+    depends_on: [map-stack, map-structure]
+    inputs:
+      - planning/codebase/STACK.md
+      - planning/codebase/STRUCTURE.md
+    outputs:
+      - planning/codebase/ARCHITECTURE.md
+
+  - id: map-conventions
+    name: Conventions
+    type: spec
+    intent: exploration
+    template: conventions.md
+    depends_on: [map-stack, map-structure]
+    inputs:
+      - planning/codebase/STACK.md
+      - planning/codebase/STRUCTURE.md
+    outputs:
+      - planning/codebase/CONVENTIONS.md
+
+  - id: map-testing
+    name: Testing Map
+    type: spec
+    intent: exploration
+    template: testing.md
+    depends_on: [map-stack]
+    inputs:
+      - planning/codebase/STACK.md
+    outputs:
+      - planning/codebase/TESTING.md
+
+  - id: map-integrations
+    name: Integrations Map
+    type: spec
+    intent: exploration
+    template: integrations.md
+    depends_on: [map-stack]
+    inputs:
+      - planning/codebase/STACK.md
+    outputs:
+      - planning/codebase/INTEGRATIONS.md
+
+  - id: map-concerns
+    name: Concerns and Risk
+    type: spec
+    intent: decision
+    template: concerns.md
+    depends_on: [map-stack, map-architecture, map-testing, map-integrations]
+    inputs:
+      - planning/codebase/STACK.md
+      - planning/codebase/ARCHITECTURE.md
+      - planning/codebase/TESTING.md
+      - planning/codebase/INTEGRATIONS.md
+    outputs:
+      - planning/codebase/CONCERNS.md
+
+  - id: map-summary
+    name: Codebase Summary
+    type: spec
+    intent: summary
+    template: summary.md
+    depends_on: [map-stack, map-structure, map-architecture, map-conventions, map-testing, map-integrations, map-concerns]
+    inputs:
+      - planning/codebase/STACK.md
+      - planning/codebase/STRUCTURE.md
+      - planning/codebase/ARCHITECTURE.md
+      - planning/codebase/CONVENTIONS.md
+      - planning/codebase/TESTING.md
+      - planning/codebase/INTEGRATIONS.md
+      - planning/codebase/CONCERNS.md
+    outputs:
+      - planning/codebase/CODEBASE.md
+
+  - id: map-state
+    name: Living State
+    type: spec
+    intent: memory
+    template: state.md
+    depends_on: [map-summary]
+    inputs:
+      - planning/codebase/CODEBASE.md
+    outputs:
+      - planning/codebase/STATE.md

@@ -8,6 +8,7 @@
 - `specfirst starter apply <name>` applies a starter kit to the current workspace.
 - `specfirst status` shows current workflow status.
 - `specfirst <stage-id>` renders a stage prompt to stdout.
+- `specfirst bundle <stage-id> --file <glob>` bundles a stage prompt plus extra files into one pasteable document (`--raw` for tags-only, `--shell` for a heredoc, `--report-json` for a machine-readable report).
 - `specfirst complete <stage-id> <output-files...>` records completion and stores artifacts.
 - `specfirst task [task-id]` lists tasks or generates a prompt for a specific task (requires a completed `decompose` stage).
 - `specfirst complete-spec [--archive|--warn-only]` validates completion and optionally archives. It is a validation tool, not a strict workflow requirement.

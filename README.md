@@ -31,6 +31,9 @@ specfirst init
 # Generates a prompt, pipes it to your clipboard (macos pbcopy)
 specfirst requirements | pbcopy
 
+# Optional: bundle extra code context for an LLM
+specfirst bundle requirements --file "src/**" --report-json - | pbcopy
+
 # 3. Paste into your LLM to get requirements.md content
 # ... (User Action: Paste result into requirements.md) ...
 
@@ -77,6 +80,7 @@ Complete, runnable examples with protocols and templates:
 - [Code Review](starters/code-review/README.md): Staged, gated review workflow designed to converge
 - [Database Migration](starters/database-migration/README.md): Safe schema changes with approval gates and rollback planning
 - [Product Design](starters/product-design/README.md): Design flow from product vision to implementation handoff
+- [Brownfield Map](starters/brownfield-map/): Generate durable codebase docs for existing projects
 
 ## Install
 

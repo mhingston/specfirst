@@ -28,6 +28,11 @@ This renders the template for that stage to `stdout`, embedding any needed conte
 specfirst requirements | claude -p
 ```
 
+If you need extra code context (beyond stage artifacts), use `specfirst bundle`:
+```bash
+specfirst bundle requirements --file "src/**" | claude -p
+```
+
 ### 4. Complete a Stage
 Once you have the output from the LLM, record it:
 ```bash

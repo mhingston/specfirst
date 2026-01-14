@@ -10,7 +10,7 @@ SpecFirst templates are rendered using Go's `text/template` package. The followi
 
 | Variable | Type | Description |
 | :--- | :--- | :--- |
-| `.StageName` | `string` | The ID of the current stage (e.g., `requirements`, `plan`). |
+| `.StageName` | `string` | The name of the current stage (from the protocol). |
 | `.ProjectName` | `string` | The name of the project root directory. |
 | `.Inputs` | `[]Input` | List of input files available to this stage. |
 | `.Outputs` | `[]string` | List of expected output filenames for this stage. |
@@ -21,13 +21,12 @@ Each item in `.Inputs` has:
 
 - `.Name`: The filename (e.g., `main.go`).
 - `.Content`: The file content (string).
-- `.Path`: The relative path to the file.
 
 ### Template Functions
 
 Standard Go template functions are available, plus:
 
-- `readFile <path>`: Reads a file from the workspace (relative to root).
+- `readFile <path>`: Reads a file from the workspace (relative to root). Searches `.specfirst/skills/<path>` first.
 - `upper`: Converts string to uppercase.
 - `lower`: Converts string to lowercase.
 

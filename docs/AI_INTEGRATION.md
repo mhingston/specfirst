@@ -22,6 +22,23 @@ copilot -p "$(specfirst requirements)" --allow-all-tools
 ### 2. One-Shot / Piped (Non-Interactive)
 Use these for quick generations or scripting. Note that flags like `-p` or `--print` usually exit after one response.
 
+### 2.1 Bundling Extra Context
+If you need to include additional project files beyond the stage artifacts, use `specfirst bundle`.
+
+```bash
+# Bundle the prompt + selected files, then paste into your AI tool
+specfirst bundle design --file "src/**" --exclude "src/**/generated/**" | pbcopy
+
+# Tighter payload (no headings/report)
+specfirst bundle design --file "src/**" --raw | pbcopy
+
+# Shell-friendly heredoc you can eval/paste
+specfirst bundle design --file "src/**" --shell
+
+# Capture machine-readable report to stderr
+specfirst bundle design --file "src/**" --raw --report-json - | cat >/tmp/bundle.md
+```
+
 ```bash
 # Claude Code (headless mode)
 specfirst requirements | claude -p

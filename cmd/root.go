@@ -80,6 +80,7 @@ func init() {
 
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(starterCmd)
+	rootCmd.AddCommand(bundleCmd)
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(completeCmd)
 	rootCmd.AddCommand(completeSpecCmd)
