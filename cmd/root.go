@@ -14,6 +14,7 @@ var (
 	stageMaxChars    int
 	stageNoStrict    bool
 	stageInteractive bool
+	stageDryRun      bool
 
 	stageGranularity    string
 	stageMaxTasks       int
@@ -56,6 +57,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&stageOut, "out", "", "write compiled prompt to a file")
 	rootCmd.PersistentFlags().IntVar(&stageMaxChars, "max-chars", 0, "truncate output to max chars")
 	rootCmd.PersistentFlags().BoolVar(&stageNoStrict, "no-strict", false, "bypass dependency gating")
+	rootCmd.PersistentFlags().BoolVar(&stageDryRun, "dry-run", false, "print prompt to stdout instead of running configured harness")
 	rootCmd.Flags().BoolVar(&stageInteractive, "interactive", false, "generate interactive meta-prompt")
 
 	rootCmd.PersistentFlags().StringVar(&stageGranularity, "granularity", "", "task granularity: feature, story, ticket, commit")

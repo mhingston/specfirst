@@ -42,6 +42,7 @@ These commands generate **prompts only** — no state, no enforcement, no AI cal
 
 - `--protocol <path|name>` override active protocol (path to file or name in `.specfirst/protocols`).
 - `--format text|json|yaml|shell` output format (default: `text`).
+- `--dry-run` print the generated prompt to stdout instead of running the configured harness.
 
 - `--out <file>` write prompt to a file.
 - `--max-chars <n>` truncate output.

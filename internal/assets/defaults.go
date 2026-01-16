@@ -249,6 +249,9 @@ protocol: %s
 language: ""
 framework: ""
 
+# Harness (optional): CLI tool to execute prompts
+# harness: claude
+# harness_args: "--verbose"
 
 custom_vars: {}
 constraints: {}

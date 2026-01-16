@@ -46,6 +46,30 @@ specfirst complete requirements ./requirements.md
 ls -l .specfirst/artifacts/
 ```
 
+## Harness Support (Simplified Workflow)
+
+You can configure SpecFirst to automatically run your prompt through an external CLI tool (like `claude` or `opencode`), removing the need to pipe output manually.
+
+**1. Configure your harness in `.specfirst/config.yaml`:**
+
+```yaml
+harness: claude
+harness_args: "--verbose"
+```
+
+**2. Run a stage directly:**
+
+```bash
+# SpecFirst runs the prompt through the harness and streams the response to stdout
+specfirst requirements > requirements.md
+```
+
+**3. Use `--dry-run` to see the prompt instead:**
+
+```bash
+specfirst requirements --dry-run
+```
+
 ## Repository Layout
 A standard SpecFirst project looks like this:
 

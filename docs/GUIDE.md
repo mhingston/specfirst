@@ -46,6 +46,28 @@ You can override the active protocol for any command using the `--protocol` flag
 specfirst --protocol path/to/custom-protocol.yaml status
 ```
 
+## Simplified Workflow with Harness
+
+If you frequently use the same AI CLI (like `claude` or `opencode`), you can configure it as a **harness** in `.specfirst/config.yaml`.
+
+```yaml
+harness: claude
+harness_args: "--verbose"
+```
+
+Now, running a stage command will automatically execute the harness with the prompt:
+
+```bash
+# Runs prompt through 'claude' and writes response to file
+specfirst requirements > requirements.md
+```
+
+To see the prompt without running the harness, use `--dry-run`:
+
+```bash
+specfirst requirements --dry-run
+```
+
 ## Advanced Workflow
 
 ### Task Decomposition
